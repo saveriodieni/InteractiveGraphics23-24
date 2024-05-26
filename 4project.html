@@ -1,11 +1,14 @@
 <doctype html>
-    <!-- Copyright 2020, Cem Yuksel, University of Utah -->
     <html>
     <head>
-    <title>CS 4600 - Project 6</title>
+    <title>Final Project</title>
     <script type="text/javascript" id="includedscript" src="proj.js"></script>
     <script type="text/javascript" src="gravity.js"></script>
-    
+    <script type="text/javascript" src="obj.js"></script>
+    <script type="text/javascript" src="pool-table.js"></script>
+    <script type="text/javascript" src="initial_situation.js"></script>
+    <script type="text/javascript" src="box.js"></script>
+     
     <script type="text/javascript">
     document.addEventListener("keydown", keyDownTextField, false);
     function keyDownTextField(e) {
@@ -24,6 +27,44 @@
             head.appendChild(script);
             console.log('New script loaded.');
         }
+        /*const moveSpeed = 0.1;
+        const rotSpeed = 0.1;
+        switch (event.key) {
+            case 'ArrowUp': // Rotation on X
+                viewRotX -= rotSpeed;
+                break;
+            case 'ArrowDown': // Rotation on X
+                viewRotX += rotSpeed;
+                break;
+            case 'ArrowLeft': // Rotation on Y
+                viewRotY -= rotSpeed;
+                break;
+            case 'ArrowRight': // Rotation on Y
+                viewRotY += rotSpeed;
+                break;
+            case 'w': // forward
+                viewPosX += moveSpeed * Math.sin(viewRotY);
+                transZ -= moveSpeed * Math.cos(viewRotY);
+                break;
+            case 's': // back
+                viewPosX -= moveSpeed * Math.sin(viewRotY);
+                transZ += moveSpeed * Math.cos(viewRotY);
+                break;
+            case 'a': // left
+                viewPosX -= moveSpeed * Math.cos(viewRotY);
+                transZ -= moveSpeed * Math.sin(viewRotY);
+                break;
+            case 'd': // right
+                viewPosX += moveSpeed * Math.cos(viewRotY);
+                transZ += moveSpeed * Math.sin(viewRotY);
+                break;
+            case 'q': // up
+                viewPosY += moveSpeed;
+                break;
+            case 'e': // down
+                viewPosY -= moveSpeed;
+                break;
+        }*/
     }
     </script>
     
@@ -110,41 +151,6 @@
     </script>
     
     <script type="text/javascript">
-
-    /*class Vec3 {
-        constructor( x, y, z ) { this.init(x,y,z); }
-        init( x, y, z ) { this.x=x; this.y=y; this.z=z; }
-        copy ( ) { return new Vec3( this.x, this.y, this.z ); }
-        set  (v) { this.x =v.x; this.y =v.y; this.z =v.z; }
-        inc  (v) { this.x+=v.x; this.y+=v.y; this.z+=v.z; }
-        dec  (v) { this.x-=v.x; this.y-=v.y; this.z-=v.z; }
-        scale(f) { this.x*=f; this.y*=f; this.z*=f; }
-        add  (v) { return new Vec3( this.x+v.x, this.y+v.y, this.z+v.z ); }
-        sub  (v) { return new Vec3( this.x-v.x, this.y-v.y, this.z-v.z ); }
-        dot  (v) { return this.x*v.x + this.y*v.y + this.z*v.z; }
-        cross(v) { return new Vec3( this.y*v.z-this.z*v.y, this.z*v.x-this.x*v.z, this.x*v.y-this.y*v.x ); }
-        mul  (f) { return new Vec3( this.x*f, this.y*f, this.z*f ); }
-        div  (f) { return new Vec3( this.x/f, this.y/f, this.z/f ); }
-        len2 ( ) { return this.dot(this); }
-        len  ( ) { return Math.sqrt(this.len2()); }
-        unit ( ) { return this.div(this.len()); }
-        normalize() {
-            var l = this.len();
-            this.x /= l;
-            this.y /= l;
-            this.z /= l;
-        }
-        trans(m) {
-            return {
-                x: m[0]*this.x + m[4]*this.y + m[ 8]*this.z + m[12],
-                y: m[1]*this.x + m[5]*this.y + m[ 9]*this.z + m[13],
-                z: m[2]*this.x + m[6]*this.y + m[10]*this.z + m[14],
-                w: m[3]*this.x + m[7]*this.y + m[11]*this.z + m[15]
-            };
-        }
-    }
-
-    function ToVec3(a) { return new Vec3(a[0],a[1],a[2]); }*/
 
     var gravity;
     var mass;
@@ -328,38 +334,16 @@
     var perspectiveMatrix;	// perspective projection matrix
     var environmentTexture;
     var viewRotX=0, viewRotZ=0, transZ=3;
-    var sphereCount = 10;
+    /*var viewPosX = 0;
+    var viewPosY = 0;
+    var transZ = 3;
+    var viewRotX = 0;
+    var viewRotY = 0;
+    var viewRotZ = 0;*/
+    var sphereCount = 15;
     var primaryRT, secondaryRT;
     
-    var fixed_spheres = [
-        {
-            center: [ 0, 0, -10001.0 ],
-            radius: 10000.0,
-            mtl: {
-                k_d: [ 0.1, 0.1, 0.2 ],
-                k_s: [ 0.2, 0.2, 0.2 ],
-                n: 10
-            }
-        },
-        {
-            center: [ 0, 0, 0 ],
-            radius: 1.0,
-            mtl: {
-                k_d: [ 0.5, 0.0, 0.0 ],
-                k_s: [ 0.8, 0.8, 0.8 ],
-                n: 100
-            }
-        },
-    ];
-    
     var spheres = fixed_spheres.slice();
-    
-    var lights = [
-        {
-            position:  [ 0, 0, 1000 ],
-            intensity: [ 1, 1, 1 ]
-        }
-    ];
     
     const raytraceFS_header = `
         precision highp float;
@@ -562,43 +546,6 @@
     function InitScene()
     {
         spheres = fixed_spheres.slice();
-        const count = sphereCount;
-        const size = Math.sqrt(count)/2 + 1;
-        for ( var i=1; i<count; ++i ) {
-            var valid = false;
-            var x, y, z, r;
-            while ( ! valid ) {
-                a = Math.random() * Math.PI * 2;
-                b = Math.random() * size;
-                x = Math.cos(a) * b;
-                y = Math.sin(a) * b;
-                r = Math.random()*0.6 + 0.1;
-                z = r-1;
-                valid = true;
-                for ( var j=1; j<spheres.length; ++j ) {
-                    const c = spheres[j].center;
-                    const dx = c[0] - x;
-                    const dy = c[1] - y;
-                    const dz = c[2] - z;
-                    const len = Math.sqrt( dx*dx + dy*dy + dz*dz );
-                    if ( len < r + spheres[j].radius ) {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-            const ks = Math.random();
-            const n = Math.random()*1000;
-            spheres.push({
-                center: [x,y,z],
-                radius: r,
-                mtl: {
-                    k_d: [ Math.random(), Math.random(), Math.random() ],
-                    k_s: [ ks, ks, ks ],
-                    n: n
-                }
-            });
-        }
         primaryRT.init();
         secondaryRT.init();
     }
@@ -666,41 +613,37 @@
     
         triSphere.init();
         background.init();
-    
+        
         primaryRT   = new PrimaryRayTracer;
         secondaryRT = new SecondaryRayTracer;
-    
+
         sphereDrawer = new SphereDrawer;
         sphereDrawer.setLight( lights[0].position, lights[0].intensity );
-    
         UpdateCanvasSize();
         InitScene();
-        gravity=new Vec3( 0, 0.0, -0.5 );
+        gravity=new Vec3( 0, 0.0, -2.0 );
         mass=5;
         damping=1;
         stiffness=1;
         springs=Array(0);
         velocities=Array(spheres.length);
         list_of_centers = Array(spheres.length);
+        radii = Array(spheres.length);
         for(var i=0;i<spheres.length;i++){
             list_of_centers[i]=ToVec3(spheres[i].center);
+            radii[i]=spheres[i].radius;
             velocities[i]=new Vec3(0.0,0.0,0.0);
         }
-        restitution=-0.8;
+        restitution=0.8;
         function render() {
-            var dt = 0.016; // Assumendo un framerate di 60 FPS, dt è ~16 ms
-            SimTimeStep(dt, list_of_centers, velocities, springs, stiffness, damping, mass, gravity, restitution);
+            var dt = 0.016; // Assuming a framerate of 60 FPS, dt is ~16 ms
+            SimTimeStep(dt, list_of_centers, radii ,velocities, springs, stiffness, damping, mass, gravity, restitution);
             primaryRT.updateCenters();
             secondaryRT.updateCenters();
-            // Aggiungi qui il codice per renderizzare le sfere con WebGL utilizzando le posizioni aggiornate
-            for(var i=0;i<spheres.length;i++){
-                console.log("sphere "+i+" = "+spheres[i].center);
-            }
             DrawScene();
             requestAnimationFrame(render);
         }
 
-        // Avvia il ciclo di rendering
         render();
     }
     
@@ -747,7 +690,49 @@
     function GetTrans()
     {
         function dot(a,b) { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
-    
+        /*function normalize(a) {
+            var len = Math.sqrt(dot(a, a));
+            return [a[0]/len, a[1]/len, a[2]/len];
+        }
+        function cross(a, b) {
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0]
+            ];
+        }
+
+        var cz = Math.cos(viewRotZ);
+        var sz = Math.sin(viewRotZ);
+        var cx = Math.cos(viewRotX);
+        var sx = Math.sin(viewRotX);
+        var cy = Math.cos(viewRotY);
+        var sy = Math.sin(viewRotY);
+
+        var forward = normalize([cy*sz, -cy*cz, sx]);
+        var right = normalize(cross(forward, [0, 1, 0]));
+        var up = cross(right, forward);
+
+        var c = [
+            viewPosX,
+            viewPosY,
+            transZ
+        ];
+
+        var worldToCam = [
+            right[0], up[0], -forward[0], 0,
+            right[1], up[1], -forward[1], 0,
+            right[2], up[2], -forward[2], 0,
+            -dot(right, c), -dot(up, c), dot(forward, c), 1,
+        ];
+
+        var camToWorld = [
+            right[0], right[1], right[2], 0,
+            up[0], up[1], up[2], 0,
+            -forward[0], -forward[1], -forward[2], 0,
+            c[0], c[1], c[2], 1
+        ];*/
+
         var cz = Math.cos( viewRotZ );
         var sz = Math.sin( viewRotZ );
         var cx = Math.cos( viewRotX );
@@ -771,9 +756,9 @@
             z[0], z[1], z[2], 0,
             c[0], c[1], c[2], 1
         ];
-        return { camToWorld:camToWorld, worldToCam:worldToCam };
+        return { camToWorld: camToWorld, worldToCam: worldToCam };
     }
-    
+
     // This is the main function that handled WebGL drawing
     function DrawScene()
     {
@@ -1043,8 +1028,10 @@
     <div class="control"><hr/></div>
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
     <div class="control"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
-    <div class="control"><span id="count-label">Sphere Count:</span><span class="val"><span class="value" id="count-value">10</span><input type="button" value="+" onclick="IncCount(1)"><input type="button" value="&ndash;" onclick="IncCount(-1)"></span><input id="count-range" type="range" min="1" max="100" value="10" oninput="SetCount(this.value)" onchange="InitWebGL()"/></div>
     <div class="control"><input type="button" class="btn" value="New Random Scene" onclick="InitWebGL()"></div>
+    <!--<div class="control">OBJ model:<br/><input id="obj" type="file" onchange="LoadObj(this)" accept=".obj"/></div>
+    <div class="control"><span id="count-label">Sphere Count:</span><span class="val"><span class="value" id="count-value">15</span><input type="button" value="+" onclick="IncCount(1)"><input type="button" value="&ndash;" onclick="IncCount(-1)"></span><input id="count-range" type="range" min="1" max="100" value="10" oninput="SetCount(this.value)" onchange="InitWebGL()"/></div>
+    <div class="control">Texture image:<br/><input id="texture" type="file" onchange="LoadTexture(this)" accept="image/*"/></div>-->
     </div>
     </div>
     </div>

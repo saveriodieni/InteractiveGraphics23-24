@@ -36,10 +36,10 @@ function ToVec3(a) { return new Vec3(a[0],a[1],a[2]); }
 // This function is called for every step of the simulation.
 // Its job is to advance the simulation for the given time step duration dt.
 // It updates the given positions and velocities.
-function SimTimeStep( dt, positions, velocities, springs, stiffness, damping, particleMass, gravity, restitution )
+function SimTimeStep( dt, positions, radii ,velocities, springs, stiffness, damping, particleMass, gravity, restitution )
 {
 	var forces = Array( positions.length ); // The total for per particle
-	
+
 	// [TO-DO] Compute the total force of each particle
 	for(var i=0;i<positions.length;i++){
 		forces[i]=new Vec3(particleMass*gravity.x,particleMass*gravity.y,particleMass*gravity.z);
@@ -71,22 +71,22 @@ function SimTimeStep( dt, positions, velocities, springs, stiffness, damping, pa
 		velocities[i]=velocities[i].add(a.mul(dt));
 		positions[i]=positions[i].add(velocities[i].mul(dt));
 	}
-	
+
 	// [TO-DO] Handle collisions
 	
-	/*for(var i=0;i<positions.length;i++){
-		if(positions[i].z<=0){
-			positions[i].z=0;
+	for(var i=0;i<positions.length;i++){
+		if(positions[i].z <= radii[i]){
+			positions[i].z = radii[i];
 			var a=forces[i].div(particleMass);
 			velocities[i]=(velocities[i].mul(-restitution)).add(a.mul(dt));
 			positions[i]=positions[i].add(velocities[i].mul(dt));
 		}
-		else if(positions[i].z>=1){
-			positions[i].z=1;
+		else if(positions[i].z >= (1 - radii[i])){
+			positions[i].z = radii[i];
 			var a=forces[i].div(particleMass);
 			velocities[i]=(velocities[i].mul(-restitution)).add(a.mul(dt));
 			positions[i]=positions[i].add(velocities[i].mul(dt));
 		}
-	}*/
+	}
 }
 
