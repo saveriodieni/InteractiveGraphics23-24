@@ -7,7 +7,6 @@
     <script type="text/javascript" src="obj.js"></script>
     <script type="text/javascript" src="pool-table.js"></script>
     <script type="text/javascript" src="initial_situation.js"></script>
-    <script type="text/javascript" src="box.js"></script>
      
     <script type="text/javascript">
     document.addEventListener("keydown", keyDownTextField, false);
@@ -332,6 +331,7 @@
     var sphereDrawer;
     var canvas, gl;
     var perspectiveMatrix;	// perspective projection matrix
+    var matrixMVP;
     var environmentTexture;
     var viewRotX=0, viewRotZ=0, transZ=3;
     /*var viewPosX = 0;
@@ -592,6 +592,48 @@
         }
         gl.texParameteri( gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR );
     }
+
+    function LoadObj( param )
+    {
+        if ( param.files && param.files[0] ) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var mesh = new ObjMesh;
+                mesh.parse( e.target.result );
+                var box = mesh.getBoundingBox();
+                var shift = [
+                    -(box.min[0]+box.max[0])/2,
+                    -(box.min[1]+box.max[1])/2,
+                    -(box.min[2]+box.max[2])/2
+                ];
+                var size = [
+                    (box.max[0]-box.min[0])/2,
+                    (box.max[1]-box.min[1])/2,
+                    (box.max[2]-box.min[2])/2
+                ];
+                var maxSize = Math.max( size[0], size[1], size[2] );
+                var scale = 1/maxSize;
+                mesh.shiftAndScale( shift, scale );
+                var buffers = mesh.getVertexBuffers();
+                for(var i=0;i<buffers.positionBuffer.length;i++){
+                    buffers.positionBuffer[i]*=6;
+                    if(i%3==1){
+                        buffers.positionBuffer[i]-=1.6;
+                        //console.log(buffers.positionBuffer[i]);
+                    }
+                }
+                meshDrawer.setMesh( buffers.positionBuffer, buffers.texCoordBuffer, buffers.normalBuffer );
+                meshDrawer.swapYZ(true);
+                var img = new Image();
+                img.src = 'pool-table/wood_wallnut.png';
+                img.onload = function() {
+                    meshDrawer.setTexture( img );
+                    //DrawScene();
+                }
+            }
+            reader.readAsText( param.files[0] );
+        }
+    }
     
     // Called once to initialize
     function InitWebGL()
@@ -620,8 +662,35 @@
         sphereDrawer = new SphereDrawer;
         sphereDrawer.setLight( lights[0].position, lights[0].intensity );
         UpdateCanvasSize();
+
+        let fileContent;
+	    meshDrawer = new MeshDrawer();
+
+        //LoadObj();
+
+        /*window.onload = function() {
+            // Seleziona l'input di tipo file e imposta il percorso del file che desideri caricare
+            var input = document.getElementById('obj');
+            
+            // Imposta il percorso del file che desideri caricare
+            var filePath = 'pool-table/pool-table-no-balls.obj';
+            
+            // Crea un nuovo oggetto File utilizzando il percorso del file
+            var file = new File([],'file.obj',{type:'text/plain'});
+            
+            // Crea un nuovo oggetto FileList contenente il tuo file
+            var fileList = new DataTransfer();
+            fileList.items.add(file);
+            
+            // Assegna il FileList al campo di input
+            input.files = fileList.files;
+            
+            // Simula il cambiamento del campo file una volta che la pagina è stata completamente caricata
+            input.dispatchEvent(new Event('change'));
+        };*/
+
         InitScene();
-        gravity=new Vec3( 0, 0.0, -2.0 );
+        gravity=new Vec3( 0, 0.0, -0.1 );
         mass=5;
         damping=1;
         stiffness=1;
@@ -772,6 +841,14 @@
     
         // Rasterization
         if ( document.getElementById('raster').checked ) {
+            var trans=GetTrans();
+            matrixMVP=MatrixMult( perspectiveMatrix, trans.worldToCam );
+            var mv=trans.worldToCam;
+            var nrmTrans = [ mv[0],mv[1],mv[2], mv[4],mv[5],mv[6], mv[8],mv[9],mv[10] ];
+            var campos = [mv[12],mv[13],mv[14]]
+            meshDrawer.draw(matrixMVP, mv, nrmTrans, campos);
+            //console.log(meshDrawer);
+            
             background.draw( trans );
             sphereDrawer.setTrans( mvp, [ trans.camToWorld[12], trans.camToWorld[13], trans.camToWorld[14] ] );
             spheres.forEach( s => sphereDrawer.draw(s) );
@@ -945,6 +1022,23 @@
         var c = document.getElementById('controls');
         c.style.display = c.style.display == 'none' ? '' : 'none';
     }
+
+    function SetShininess( param )
+    {
+        var exp = param.value;
+        var s = Math.pow(10,exp/25);
+        document.getElementById('shininess-value').innerText = s.toFixed( s < 10 ? 2 : 0 );
+        meshDrawer.setShininess(s);
+        DrawScene();
+    }
+
+    function SetSpecularity(param){
+        var exp = param.value;
+        var s = exp/100;
+        document.getElementById('specularity-value').innerText = exp;
+        meshDrawer.setSpecularity(s);
+        DrawScene();
+    }
     
     ///////////////////////////////////////////////////////////////////////////////////
     </script>
@@ -1029,9 +1123,12 @@
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
     <div class="control"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
     <div class="control"><input type="button" class="btn" value="New Random Scene" onclick="InitWebGL()"></div>
-    <!--<div class="control">OBJ model:<br/><input id="obj" type="file" onchange="LoadObj(this)" accept=".obj"/></div>
-    <div class="control"><span id="count-label">Sphere Count:</span><span class="val"><span class="value" id="count-value">15</span><input type="button" value="+" onclick="IncCount(1)"><input type="button" value="&ndash;" onclick="IncCount(-1)"></span><input id="count-range" type="range" min="1" max="100" value="10" oninput="SetCount(this.value)" onchange="InitWebGL()"/></div>
-    <div class="control">Texture image:<br/><input id="texture" type="file" onchange="LoadTexture(this)" accept="image/*"/></div>-->
+    <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">50</span><input id="shininess-exp" type="range" min="0" max="100" value="50" oninput="SetShininess(this)"/></div>
+    <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">50</span><input id="specularity-exp" type="range" min="0" max="100" value="50" oninput="SetSpecularity(this)"/></div>
+    <div class="control-group">
+    <div class="control">OBJ model:<br/><input id="obj" type="file" onchange="LoadObj(this)" accept=".obj"/></div>
+    <!--<div class="control">Texture image:<br/><input id="texture" type="file" onchange="LoadTexture(this)" accept="image/*"/></div>-->
+    </div>
     </div>
     </div>
     </div>

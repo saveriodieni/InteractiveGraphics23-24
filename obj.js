@@ -14,9 +14,9 @@ class ObjMesh
 	load( url )
 	{
 		var xhttp = new XMLHttpRequest();
-		xhttp.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				parse( this.responseText );
+		xhttp.onreadystatechange = () => {
+			if (xhttp.readyState == 4 && xhttp.status == 200) {
+				this.parse(xhttp.responseText);
 			}
 		};
 		xhttp.open("GET", url, true);
