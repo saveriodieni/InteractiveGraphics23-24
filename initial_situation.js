@@ -137,10 +137,23 @@ var fixed_spheres = [
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
+    },
+    {   //white
+        center: [ 0, 4, 0 ],
+        radius: 0.2,
+        mtl: {
+            k_d: [ 1, 1, 1 ],
+            k_s: [ 0.2, 0.2, 0.2 ],
+            n: 100
+        }
     }
 ];
 
 var lights = [
+    {
+        position:  [ 0, 0, 10 ],
+        intensity: [ 1, 1, 1 ]
+    }/*,
     {
         position:  [ 5.0, 5.0, 10 ],
         intensity: [ 1, 1, 1 ]
@@ -156,5 +169,5 @@ var lights = [
     {
         position:  [ -5.0, 5.0, 10 ],
         intensity: [ 1, 1, 1 ]
-    }
+    }*/
 ];

@@ -33,17 +33,61 @@ class Vec3 {
 
 function ToVec3(a) { return new Vec3(a[0],a[1],a[2]); }
 
+var iteration;
+
 // This function is called for every step of the simulation.
 // Its job is to advance the simulation for the given time step duration dt.
 // It updates the given positions and velocities.
 function SimTimeStep( dt, positions, radii ,velocities, springs, stiffness, damping, particleMass, gravity, restitution )
 {
-	var forces = Array( positions.length ); // The total for per particle
+	/*if(forces === undefined){
+		forces = Array( positions.length ); // The total for per particle
+		iteration=0;
+		// [TO-DO] Compute the total force of each particle
+		for(var i=0;i<positions.length;i++){
+			forces[i]=gravity.mul(particleMass);
+			if(i==positions.length-1){
+				var x = Math.random()*200;
+				var y = Math.random()*200;
+				if(x>=100) x=x-100;
+				else x=-x;
+				if(y>=100) y=y-100;
+				else y=-y;
+				var impulse=new Vec3(x,y,0);
+				var impulse=new Vec3(0,-100,0);
+				forces[i]=forces[i].add(impulse);
+			}
+		}
+	}*/
 
+	var forces = Array( positions.length ); // The total for per particle
+	if (iteration === undefined) iteration=0;
+	else iteration++;
 	// [TO-DO] Compute the total force of each particle
 	for(var i=0;i<positions.length;i++){
-		forces[i]=new Vec3(particleMass*gravity.x,particleMass*gravity.y,particleMass*gravity.z);
+		forces[i]=new Vec3(0,0,0);
+		if (positions[i].z>0.01) forces[i]=gravity.mul(particleMass);
+		if(i==positions.length-1 && iteration==0){
+			/*var x = Math.random()*200;
+			var y = Math.random()*200;
+			if(x>=100) x=x-100;
+			else x=-x;
+			if(y>=100) y=y-100;
+			else y=-y;
+			var impulse=new Vec3(x,y,0);*/
+			var impulse=new Vec3(0,-1000.0,0);
+			forces[i]=forces[i].add(impulse);
+		}
 	}
+
+	/*if(Math.sqrt(forces[positions.length-1].x*forces[positions.length-1].x + forces[positions.length-1].y*forces[positions.length-1].y)<0.01){
+		var x = Math.random()*100;
+		var y = Math.random()*100;
+		forces[positions.length-1].x=x;
+		forces[positions.length-1].y=y;
+	}*/
+	
+	//console.log("iteration "+iteration,forces,positions,velocities);
 	for(var i=0; i<springs.length;i++){
 		var k=springs[i].p0;
 		var j=springs[i].p1;
@@ -74,18 +118,79 @@ function SimTimeStep( dt, positions, radii ,velocities, springs, stiffness, damp
 
 	// [TO-DO] Handle collisions
 	
+	//gravity
 	for(var i=0;i<positions.length;i++){
-		if(positions[i].z <= radii[i]){
-			positions[i].z = radii[i];
-			var a=forces[i].div(particleMass);
-			velocities[i]=(velocities[i].mul(-restitution)).add(a.mul(dt));
-			positions[i]=positions[i].add(velocities[i].mul(dt));
+		if(positions[i].z <= 0){
+			positions[i].z = 0;
 		}
-		else if(positions[i].z >= (1 - radii[i])){
-			positions[i].z = radii[i];
-			var a=forces[i].div(particleMass);
-			velocities[i]=(velocities[i].mul(-restitution)).add(a.mul(dt));
-			positions[i]=positions[i].add(velocities[i].mul(dt));
+		if(positions[i].y+radii[i]<=-5){
+			positions[i].y=-5-radii[i];
+			//forces[i].x=-forces[i].mul(restitution).x;
+			//forces[i].y=-forces[i].mul(restitution).y;
+			velocities[i].x=-velocities[i].x;
+			velocities[i].y=-velocities[i].y;
+		}
+		else if(positions[i].y+radii[i]>=5.4){
+			positions[i].y=5.4-radii[i];
+			//forces[i].x=-forces[i].mul(restitution).x;
+			//forces[i].y=-forces[i].mul(restitution).y;
+			velocities[i].x=-velocities[i].x;
+			velocities[i].y=-velocities[i].y;
+		}
+
+		if(positions[i].x+radii[i]<=-2.5){
+			positions[i].x=-2.5-radii[i];
+			//forces[i].x=-forces[i].mul(restitution).x;
+			//forces[i].y=-forces[i].mul(restitution).y;
+			velocities[i].x=-velocities[i].x;
+			velocities[i].y=-velocities[i].y;
+		}
+		else if(positions[i].x+radii[i]>=3){
+			positions[i].x=3-radii[i];
+			//forces[i].x=-forces[i].mul(restitution).x;
+			//forces[i].y=-forces[i].mul(restitution).y;
+			velocities[i].x=-velocities[i].x;
+			velocities[i].y=-velocities[i].y;
+		}
+	}
+
+	//
+	
+	// Handle collisions between spheres
+	for (let i = 0; i < positions.length; i++) {
+		for (let j = i + 1; j < positions.length; j++) {
+			let diff = positions[j].sub(positions[i]);
+			let dist = diff.len();
+			let overlap = radii[i] + radii[j] - dist;
+
+			if (overlap > 0) {
+				let normal = diff.unit();
+				let relativeVelocity = velocities[j].sub(velocities[i]);
+				let velocityAlongNormal = relativeVelocity.dot(normal);
+
+				let impulseMagnitude = -(1 + restitution) * velocityAlongNormal / (2 / particleMass);
+				let impulse = normal.mul(impulseMagnitude);
+
+				velocities[i].dec(impulse.div(particleMass));
+				velocities[j].inc(impulse.div(particleMass));
+
+				// Positional correction to avoid sinking into each other
+				let correction = normal.mul(overlap / 2);
+				positions[i].dec(correction);
+				positions[j].inc(correction);
+			}
+		}
+	}
+
+	for(var i=0;i<positions.length;i++){
+		if(velocities[i].x<0.01 && velocities[i].x>-0.01){
+			velocities[i].x=0;
+		}
+		if(velocities[i].y<0.01 && velocities[i].y>-0.01){
+			velocities[i].y=0;
+		}
+		if(velocities[i].z<0.01 && velocities[i].z>-0.01){
+			velocities[i].z=0;
 		}
 	}
 }

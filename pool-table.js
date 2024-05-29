@@ -171,7 +171,7 @@ class MeshDrawer
 		this.texture=true;
 		this.model=false;
 
-		this.lightPos = [5.0, 5.0, 10,-5.0, -5.0, 10,-5.0, 5.0, 10,5.0, -5.0, 10];
+		this.lightPos = [0,0,10];//,5.0, 5.0, 10,-5.0, -5.0, 10,-5.0, 5.0, 10,5.0, -5.0, 10];
 
 		// Compile the shader program
 		this.prog0 = InitShaderProgram( objVS0, objFS0 );
@@ -362,4 +362,4 @@ class MeshDrawer
 	}
 
 }
-var meshDrawer;
+var meshDrawerLower,meshDrawerUpper;
