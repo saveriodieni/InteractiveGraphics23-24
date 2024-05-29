@@ -3,7 +3,7 @@ var fixed_spheres = [
         center: [ 0, 0, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.5, 0.0, 0.0 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -12,7 +12,7 @@ var fixed_spheres = [
         center: [ 0.4, 0, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.5, 0.0 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -21,7 +21,7 @@ var fixed_spheres = [
         center: [ -0.4, 0, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -31,7 +31,7 @@ var fixed_spheres = [
         center: [ -0.2, 0.35, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -40,7 +40,7 @@ var fixed_spheres = [
         center: [ 0.2, 0.35, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -50,7 +50,7 @@ var fixed_spheres = [
         center: [ 0.0, 0.7, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -60,7 +60,7 @@ var fixed_spheres = [
         center: [ 0.2, -0.35, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -69,7 +69,7 @@ var fixed_spheres = [
         center: [ -0.2, -0.35, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -78,7 +78,7 @@ var fixed_spheres = [
         center: [ -0.6, -0.35, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -87,7 +87,7 @@ var fixed_spheres = [
         center: [ 0.6, -0.35, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -97,7 +97,7 @@ var fixed_spheres = [
         center: [ 0, -0.7, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -106,7 +106,7 @@ var fixed_spheres = [
         center: [ 0.4, -0.7, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -115,7 +115,7 @@ var fixed_spheres = [
         center: [ 0.8, -0.7, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -124,7 +124,7 @@ var fixed_spheres = [
         center: [ -0.4, -0.7, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -133,7 +133,7 @@ var fixed_spheres = [
         center: [ -0.8, -0.7, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 0.0, 0.0, 0.5 ],
+            k_d: [ Math.random(), Math.random(), Math.random() ],
             k_s: [ 0.8, 0.8, 0.8 ],
             n: 100
         }
@@ -142,7 +142,7 @@ var fixed_spheres = [
         center: [ 0, 4, 0 ],
         radius: 0.2,
         mtl: {
-            k_d: [ 1, 1, 1 ],
+            k_d: [ 1.0, 1.0, 1.0 ],          
             k_s: [ 0.2, 0.2, 0.2 ],
             n: 100
         }
@@ -153,21 +153,5 @@ var lights = [
     {
         position:  [ 0, 0, 10 ],
         intensity: [ 1, 1, 1 ]
-    }/*,
-    {
-        position:  [ 5.0, 5.0, 10 ],
-        intensity: [ 1, 1, 1 ]
-    },
-    {
-        position:  [ -5.0, -5.0, 10 ],
-        intensity: [ 1, 1, 1 ]
-    },
-    {
-        position:  [ 5.0, -5.0, 10 ],
-        intensity: [ 1, 1, 1 ]
-    },
-    {
-        position:  [ -5.0, 5.0, 10 ],
-        intensity: [ 1, 1, 1 ]
-    }*/
+    }
 ];

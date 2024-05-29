@@ -179,7 +179,7 @@ class MeshDrawer
 		this.prog1 = InitShaderProgram( objVS1, objFS1 );
 
 		this.lighting;
-		this.shininess=100;
+		this.shininess=1;
 		
 		this.numTriangles;
 		this.position_buffer;

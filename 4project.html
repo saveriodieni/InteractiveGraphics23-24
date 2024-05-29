@@ -343,6 +343,9 @@
     var viewRotZ = 0;*/
     var sphereCount = 15;
     var primaryRT, secondaryRT;
+    var animationId;
+    var animationRunning=false;
+    var dt;
     
     var spheres = fixed_spheres.slice();
     
@@ -1016,10 +1019,6 @@
 
     function StartSimulation(){
         gravity=new Vec3( 0, 0.0, -9.8);
-        mass=2;
-        damping=1;
-        stiffness=1;
-        springs=Array(0);
         velocities=Array(spheres.length);
         list_of_centers = Array(spheres.length);
         radii = Array(spheres.length);
@@ -1028,17 +1027,226 @@
             radii[i]=spheres[i].radius;
             velocities[i]=new Vec3(0.0,0.0,0.0);
         }
-        restitution=0.8;
+        CreateAnimation();
+    }
+
+    function CreateAnimation(){
+        if(animationId) return;
         function render() {
-            var dt = 0.016; // Assuming a framerate of 60 FPS, dt is ~16 ms
-            SimTimeStep(dt, list_of_centers, radii ,velocities, springs, stiffness, damping, mass, gravity, restitution);
+            mass=parseInt(document.getElementById("mass-value").innerText);
+            muS=parseInt(document.getElementById("static-friction-value").innerText)/100;
+            muD=parseInt(document.getElementById("dynamic-friction-value").innerText)/100;
+            restitution=parseInt(document.getElementById("restitution-value").innerText)/100;
+
+            dt = 0.016; // Assuming a framerate of 60 FPS, dt is ~16 ms
+            SimTimeStep(dt, list_of_centers, radii ,velocities, muS, muD, mass, gravity, restitution);
             primaryRT.updateCenters();
             secondaryRT.updateCenters();
             DrawScene();
-            requestAnimationFrame(render);
+            animationId = requestAnimationFrame(render);
         }
 
+        animationRunning=true;
         render();
+    }
+
+    function PauseSimulation(){
+        if(!animationRunning) return;
+        
+        animationRunning = false;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = undefined;
+        }
+    }
+
+    function Reset(){
+
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+
+        fixed_spheres = [
+            {   //b0
+                center: [ 0, 0, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b1
+                center: [ 0.4, 0, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b2
+                center: [ -0.4, 0, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            ///
+            {   //b3
+                center: [ -0.2, 0.35, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b4
+                center: [ 0.2, 0.35, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            ///
+            {   //b5
+                center: [ 0.0, 0.7, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            ///
+            {   //b6
+                center: [ 0.2, -0.35, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b7
+                center: [ -0.2, -0.35, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b8
+                center: [ -0.6, -0.35, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b9
+                center: [ 0.6, -0.35, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            ///
+            {   //b10
+                center: [ 0, -0.7, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b11
+                center: [ 0.4, -0.7, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b12
+                center: [ 0.8, -0.7, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b13
+                center: [ -0.4, -0.7, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //b14
+                center: [ -0.8, -0.7, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ Math.random(), Math.random(), Math.random() ],
+                    k_s: [ 0.8, 0.8, 0.8 ],
+                    n: 100
+                }
+            },
+            {   //white
+                center: [ 0, 4, 0 ],
+                radius: 0.2,
+                mtl: {
+                    k_d: [ 1.0, 1.0, 1.0 ],          
+                    k_s: [ 0.2, 0.2, 0.2 ],
+                    n: 100
+                }
+            }
+        ];
+
+        lights = [
+            {
+                position:  [ 0, 0, 10 ],
+                intensity: [ 1, 1, 1 ]
+            }
+        ];
+
+        velocities=Array(spheres.length);
+        list_of_centers = Array(spheres.length);
+        for(var i=0;i<spheres.length;i++){
+            list_of_centers[i]=ToVec3(spheres[i].center);
+            velocities[i]=new Vec3(0.0,0.0,0.0);
+        }
+        
+        // Clear the canvas
+        var canvas = document.getElementById('canvas');
+        var gl = canvas.getContext('webgl');
+        if (gl) {
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        }
+
+        // Reinitialize scene and redraw
+        iteration=undefined;
+        animationId=undefined;
+        animationRunning=false;
+        InitScene();
+        primaryRT.init();
+        secondaryRT.init();
+        DrawScene();
     }
     
     function IncCount( inc )
@@ -1089,6 +1297,36 @@
         meshDrawerUpper.setSpecularity(s);
         meshDrawerLower.setSpecularity(s);
         DrawScene();
+    }
+
+    function changeMax(param){
+        var exp = param.value;
+        var elem1=document.getElementById("static-friction-value");
+        elem1.innerText=exp;
+        var elem2=document.getElementById("dynamic-friction-exp");
+        elem2.max=exp;
+        var elem3=document.getElementById("dynamic-friction-value");
+        if(parseInt(elem3.innerText)>exp){
+            elem3.innerText=exp;
+        }
+    }
+
+    function change(param){
+        var exp = param.value;
+        var elem1=document.getElementById("dynamic-friction-value");
+        elem1.innerText=exp;
+    }
+
+    function update(param){
+        var exp = param.value;
+        var elem1=document.getElementById("restitution-value");
+        elem1.innerText=exp;
+    }
+
+    function updateMass(param){
+        var exp = param.value;
+        var elem1=document.getElementById("mass-value");
+        elem1.innerText=exp;
     }
     
     ///////////////////////////////////////////////////////////////////////////////////
@@ -1173,13 +1411,19 @@
     <div class="control"><hr/></div>
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
     <div class="control"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
-    <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">50</span><input id="shininess-exp" type="range" min="0" max="100" value="50" oninput="SetShininess(this)"/></div>
-    <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">50</span><input id="specularity-exp" type="range" min="0" max="100" value="50" oninput="SetSpecularity(this)"/></div>
+    <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">1</span><input id="shininess-exp" type="range" min="0" max="100" value="1" oninput="SetShininess(this)"/></div>
+    <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">100</span><input id="specularity-exp" type="range" min="0" max="100" value="100" oninput="SetSpecularity(this)"/></div>
+    <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
+    <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="100" value="20" oninput="change(this)"/></div>
+    <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
+    <div class="control"><span id="mass-label">Mass:</span><span id="mass-value">2</span><input id="mass-exp" type="range" min="1" max="15" value="2" oninput="updateMass(this)"/></div>
     <div class="control-group">
     <div class="control">Upper OBJ model:<br/><input id="objupper" type="file" onchange="LoadObjUpper(this)" accept=".obj"/></div>
     <div class="control">Lower OBJ model:<br/><input id="objlower" type="file" onchange="LoadObjLower(this)" accept=".obj"/></div>
     <div class="control"><input type="button" value="Start Simulation" onclick="StartSimulation()"></div>
-    <!--<div class="control"><input type="button" value="Reset" onclick="Reset()"></div>-->
+    <div class="control"><input type="button" value="Pause Simulation" onclick="PauseSimulation()"></div>
+    <div class="control"><input type="button" value="Resume Simulation" onclick="CreateAnimation()"></div>
+    <div class="control"><input type="button" value="Reset Simulation" onclick="Reset()"></div>
     <!--<div class="control">Texture image:<br/><input id="texture" type="file" onchange="LoadTexture(this)" accept="image/*"/></div>-->
     </div>
     </div>
