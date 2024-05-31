@@ -38,7 +38,13 @@ var iteration;
 // This function is called for every step of the simulation.
 // Its job is to advance the simulation for the given time step duration dt.
 // It updates the given positions and velocities.
-function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, gravity, restitution) {
+function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, gravity, restitution, holes) {
+    function nearToHole(index){
+        for(var i=0;i<holes.length;i++){
+            if((positions[index].sub(holes[i])).len()<0.4) return true;
+        }
+        return false;
+    }
     var forces = Array(positions.length); // The total force per particle
     if (iteration === undefined) iteration = 0;
     else iteration++;
@@ -83,23 +89,35 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
 
     // Handle collisions with ground and walls
     for (var i = 0; i < positions.length; i++) {
-        if (positions[i].z <= 0) {
-            positions[i].z = 0;
-            velocities[i].z = -velocities[i].z * restitution;
+        if((Math.abs(positions[i].x)+radii[i])>2.7 && (Math.abs(positions[i].y)+radii[i])>5.25){ // {up-left,up-right,bottom-left,bottom-right} hole
+            if(nearToHole(i)){
+                positions[i].x=3.0*Math.sign(positions[i].x);
+                positions[i].y=5.55*Math.sign(positions[i].y);
+                if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
+                else velocities[i]=new Vec3(0,0,0);
+            }
         }
-        if (positions[i].y + radii[i] <= -5) {
-            positions[i].y = -5 - radii[i];
-            velocities[i].y = -velocities[i].y * restitution;
-        } else if (positions[i].y + radii[i] >= 5.4) {
-            positions[i].y = 5.4 - radii[i];
-            velocities[i].y = -velocities[i].y * restitution;
+
+        else if((Math.abs(positions[i].y)+radii[i])<0.3 && (Math.abs(positions[i].x)+radii[i])>2.85){ // {left,right} hole
+            if(nearToHole(i)){
+                positions[i].x=3.0*Math.sign(positions[i].x);
+                positions[i].y=0.0;
+                if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
+                else {
+                    positions[i].z=-1.0;
+                    velocities[i]=new Vec3(0,0,0);
+                }
+            }
         }
-        if (positions[i].x + radii[i] <= -2.5) {
-            positions[i].x = -2.5 - radii[i];
+
+        else if((Math.abs(positions[i].x)+radii[i])>=2.85){//{left,right} wall
+            positions[i].x=2.85*Math.sign(positions[i].x)-radii[i]*Math.sign(positions[i].x);
             velocities[i].x = -velocities[i].x * restitution;
-        } else if (positions[i].x + radii[i] >= 2.85) {
-            positions[i].x = 2.85 - radii[i];
-            velocities[i].x = -velocities[i].x * restitution;
+        }
+        
+        else if((Math.abs(positions[i].y)+radii[i])>=5.4){//{bottom,up} wall
+            positions[i].y=5.4*Math.sign(positions[i].y)-radii[i]*Math.sign(positions[i].y);
+            velocities[i].y = -velocities[i].y * restitution;
         }
     }
 
@@ -134,5 +152,9 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
         if (Math.abs(velocities[i].x) < 0.01) velocities[i].x = 0;
         if (Math.abs(velocities[i].y) < 0.01) velocities[i].y = 0;
         if (Math.abs(velocities[i].z) < 0.01) velocities[i].z = 0;
+        if(positions[i].z<-1.0){
+            positions[i].z=-1.0;
+            velocities[i]=new Vec3(0,0,0);
+        }
     }
 }

@@ -155,3 +155,11 @@ var lights = [
         intensity: [ 1, 1, 1 ]
     }
 ];
+
+var holes=Array(6);
+holes[0]=new Vec3(-3.0,0.0,0.0);
+holes[1]=new Vec3(3.0,0.0,0.0);
+holes[2]=new Vec3(-3.0,5.55,0.0);
+holes[3]=new Vec3(3.0,5.55,0.0);
+holes[4]=new Vec3(-3.0,-5.55,0.0);
+holes[5]=new Vec3(3.0,-5.55,0.0);

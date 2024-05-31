@@ -1018,7 +1018,6 @@
     }
 
     function StartSimulation(){
-        gravity=new Vec3( 0, 0.0, -9.8);
         velocities=Array(spheres.length);
         list_of_centers = Array(spheres.length);
         radii = Array(spheres.length);
@@ -1033,13 +1032,14 @@
     function CreateAnimation(){
         if(animationId) return;
         function render() {
+            gravity=new Vec3( 0, 0.0, -1*parseInt(document.getElementById("gravity-value").innerText));
             mass=parseInt(document.getElementById("mass-value").innerText);
             muS=parseInt(document.getElementById("static-friction-value").innerText)/100;
             muD=parseInt(document.getElementById("dynamic-friction-value").innerText)/100;
             restitution=parseInt(document.getElementById("restitution-value").innerText)/100;
 
             dt = 0.016; // Assuming a framerate of 60 FPS, dt is ~16 ms
-            SimTimeStep(dt, list_of_centers, radii ,velocities, muS, muD, mass, gravity, restitution);
+            SimTimeStep(dt, list_of_centers, radii ,velocities, muS, muD, mass, gravity, restitution, holes);
             primaryRT.updateCenters();
             secondaryRT.updateCenters();
             DrawScene();
@@ -1323,6 +1323,12 @@
         elem1.innerText=exp;
     }
 
+    function updateGravity(param){
+        var exp = param.value;
+        var elem1=document.getElementById("gravity-value");
+        elem1.innerText=exp;
+    }
+
     function updateMass(param){
         var exp = param.value;
         var elem1=document.getElementById("mass-value");
@@ -1368,6 +1374,10 @@
         right: 1em;
         top: 1em;
         width: 18em;
+        max-height: 600px; 
+        overflow-y: auto; 
+        border: 1px solid #ccc; 
+        padding: 10px;
     }
     #controls {
         padding: 1em;
@@ -1412,10 +1422,11 @@
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
     <div class="control"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
     <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">1</span><input id="shininess-exp" type="range" min="0" max="100" value="1" oninput="SetShininess(this)"/></div>
-    <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">100</span><input id="specularity-exp" type="range" min="0" max="100" value="100" oninput="SetSpecularity(this)"/></div>
+    <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">30</span><input id="specularity-exp" type="range" min="0" max="100" value="30" oninput="SetSpecularity(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="100" value="20" oninput="change(this)"/></div>
     <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
+    <div class="control"><span id="gravity-label">Gravity:</span><span id="gravity-value">1</span><input id="gravity-exp" type="range" min="1" max="100" value="1" oninput="updateGravity(this)"/></div>
     <div class="control"><span id="mass-label">Mass:</span><span id="mass-value">2</span><input id="mass-exp" type="range" min="1" max="15" value="2" oninput="updateMass(this)"/></div>
     <div class="control-group">
     <div class="control">Upper OBJ model:<br/><input id="objupper" type="file" onchange="LoadObjUpper(this)" accept=".obj"/></div>
