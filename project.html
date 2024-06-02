@@ -1018,6 +1018,7 @@
     }
 
     function StartSimulation(){
+        if(animationId) return;
         velocities=Array(spheres.length);
         list_of_centers = Array(spheres.length);
         radii = Array(spheres.length);
@@ -1031,15 +1032,17 @@
 
     function CreateAnimation(){
         if(animationId) return;
+        var omega = Array(list_of_centers.length).fill(new Vec3(0, 0, 0)); // Angular velocity for each particle
         function render() {
             gravity=new Vec3( 0, 0.0, -1*parseInt(document.getElementById("gravity-value").innerText));
             mass=parseInt(document.getElementById("mass-value").innerText);
+            var momentOfInertia = 2 / 5 * mass * radii[0] * radii[0]; // Moment of inertia for a solid spher
             muS=parseInt(document.getElementById("static-friction-value").innerText)/100;
             muD=parseInt(document.getElementById("dynamic-friction-value").innerText)/100;
             restitution=parseInt(document.getElementById("restitution-value").innerText)/100;
 
             dt = 0.016; // Assuming a framerate of 60 FPS, dt is ~16 ms
-            SimTimeStep(dt, list_of_centers, radii ,velocities, muS, muD, mass, gravity, restitution, holes);
+            SimTimeStep(dt, list_of_centers, radii ,velocities, muS, muD, mass, gravity, restitution, holes,omega, momentOfInertia);
             primaryRT.updateCenters();
             secondaryRT.updateCenters();
             DrawScene();
@@ -1241,6 +1244,7 @@
 
         // Reinitialize scene and redraw
         iteration=undefined;
+        holesQueue;
         animationId=undefined;
         animationRunning=false;
         InitScene();
@@ -1313,6 +1317,9 @@
 
     function change(param){
         var exp = param.value;
+        var elem1=document.getElementById("static-friction-value");
+        var elem2=document.getElementById("dynamic-friction-exp");
+        elem2.max=parseInt(elem1.innerText);
         var elem1=document.getElementById("dynamic-friction-value");
         elem1.innerText=exp;
     }
@@ -1424,7 +1431,7 @@
     <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">1</span><input id="shininess-exp" type="range" min="0" max="100" value="1" oninput="SetShininess(this)"/></div>
     <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">30</span><input id="specularity-exp" type="range" min="0" max="100" value="30" oninput="SetSpecularity(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
-    <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="100" value="20" oninput="change(this)"/></div>
+    <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
     <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
     <div class="control"><span id="gravity-label">Gravity:</span><span id="gravity-value">1</span><input id="gravity-exp" type="range" min="1" max="100" value="1" oninput="updateGravity(this)"/></div>
     <div class="control"><span id="mass-label">Mass:</span><span id="mass-value">2</span><input id="mass-exp" type="range" min="1" max="15" value="2" oninput="updateMass(this)"/></div>
