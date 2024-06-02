@@ -1244,7 +1244,8 @@
 
         // Reinitialize scene and redraw
         iteration=undefined;
-        holesQueue;
+        whiteBallInHole=false;
+        ballInHole=new Array(15).fill(false);
         animationId=undefined;
         animationRunning=false;
         InitScene();

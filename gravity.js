@@ -33,13 +33,27 @@ class Vec3 {
 
 function ToVec3(a) { return new Vec3(a[0],a[1],a[2]); }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 var iteration;
 var holesQueue;
+var whiteBallInHole = false;
+var ballInHole=new Array(15).fill(false);
 
 // This function is called for every step of the simulation.
 // Its job is to advance the simulation for the given time step duration dt.
 // It updates the given positions and velocities.
 function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, gravity, restitution, holes, omega , momentOfInertia) {
+
+    for(var i=0;i<ballInHole.length;i++){
+        if(!ballInHole[i]) break;
+        else if(i==ballInHole.length-1){
+            return;
+        }
+    }
+
     function nearToHole(index){
         for(var i=0;i<holes.length;i++){
             if((positions[index].sub(holes[i])).len()<0.5) return true;
@@ -53,6 +67,39 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
     }
     else iteration++;
     
+    var sendImpule=true;
+    for(var i=0;i<positions.length;i++){
+        if(Math.sqrt(velocities[i].x*velocities[i].x + velocities[i].y * velocities[i].y)>0.01){
+            sendImpule=false;
+            break;
+        }
+    }
+
+    if(sendImpule){
+        for(var i=0; i<holes.length;i++){
+            if(positions[15].x==holes[i].x && positions[15].y == holes[i].y){
+                sleep(2000);
+                var collision=true;
+                var aux;
+                while(collision){
+                    collision=false;
+                    var x=Math.random()*4;
+                    if(x>2) x=x-2;
+                    else x=-x;
+                    aux=new Vec3(x,4,0);
+                    for(var i=0;i<positions.length-1;i++){
+                        if((positions[i].sub(aux)).len()<2*radii[i]) collision=true;
+                        continue;
+                    }
+                }
+                positions[15]=aux;
+                velocities[15]=new Vec3(0,0,0);
+                whiteBallInHole = true;
+                break;
+            }
+        }
+    }
+    
     // Compute the total force for each particle
     for (var i = 0; i < positions.length; i++) {
         forces[i] = new Vec3(0, 0, 0);
@@ -61,6 +108,16 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
         // Apply an initial impulse to the last particle
         if (i == positions.length - 1 && iteration == 0) {
             var impulse = new Vec3(0, -5000.0, 0);
+            forces[i] = forces[i].add(impulse);
+        }
+        else if(sendImpule && i == positions.length - 1 && !whiteBallInHole){
+            var x = Math.random()*10000;
+            var y = Math.random()*10000;
+            if(x>5000) x=x-5000;
+            else x=-x;
+            if(y>5000) y=y-5000;
+            else y=-y;
+            var impulse = new Vec3(x, y, 0);
             forces[i] = forces[i].add(impulse);
         }
     }
@@ -241,10 +298,12 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             if(!holesQueue[0].includes(i)){
                 if(holesQueue[0].length<3){
                     holesQueue[0].push(i);
+                    if(i!=15) ballInHole[i]=true;
                 }
                 else{
                     var ballIndex=holesQueue[0].shift();
                     holesQueue[0].push(i);
+                    if(i!=15) ballInHole[i]=true;
                     positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
                     velocities[ballIndex]=new Vec3(0,0,0);
                 }
@@ -254,10 +313,12 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             if(!holesQueue[1].includes(i)){
                 if(holesQueue[1].length<3){
                     holesQueue[1].push(i);
+                    if(i!=15) ballInHole[i]=true;
                 }
                 else{
                     var ballIndex=holesQueue[1].shift();
                     holesQueue[1].push(i);
+                    if(i!=15) ballInHole[i]=true;
                     positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
                     velocities[ballIndex]=new Vec3(0,0,0);
                 }
@@ -267,10 +328,12 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             if(!holesQueue[2].includes(i)){
                 if(holesQueue[2].length<3){
                     holesQueue[2].push(i);
+                    if(i!=15) ballInHole[i]=true;
                 }
                 else{
                     var ballIndex=holesQueue[2].shift();
                     holesQueue[2].push(i);
+                    if(i!=15) ballInHole[i]=true;
                     positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
                     velocities[ballIndex]=new Vec3(0,0,0);
                 }
@@ -280,10 +343,12 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             if(!holesQueue[3].includes(i)){
                 if(holesQueue[3].length<3){
                     holesQueue[3].push(i);
+                    if(i!=15) ballInHole[i]=true;
                 }
                 else{
                     var ballIndex=holesQueue[3].shift();
                     holesQueue[3].push(i);
+                    if(i!=15) ballInHole[i]=true;
                     positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
                     velocities[ballIndex]=new Vec3(0,0,0);
                 }
@@ -293,10 +358,12 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             if(!holesQueue[4].includes(i)){
                 if(holesQueue[4].length<3){
                     holesQueue[4].push(i);
+                    if(i!=15) ballInHole[i]=true;
                 }
                 else{
                     var ballIndex=holesQueue[4].shift();
                     holesQueue[4].push(i);
+                    if(i!=15) ballInHole[i]=true;
                     positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
                     velocities[ballIndex]=new Vec3(0,0,0);
                 }
@@ -306,14 +373,20 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             if(!holesQueue[5].includes(i)){
                 if(holesQueue[5].length<3){
                     holesQueue[5].push(i);
+                    if(i!=15) ballInHole[i]=true;
                 }
                 else{
                     var ballIndex=holesQueue[5].shift();
                     holesQueue[5].push(i);
+                    if(i!=15) ballInHole[i]=true;
                     positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
                     velocities[ballIndex]=new Vec3(0,0,0);
                 }
             }
         }		
 	}
+
+    if(whiteBallInHole) {
+        whiteBallInHole = false;
+    }
 }
