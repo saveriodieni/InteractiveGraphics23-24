@@ -1295,12 +1295,28 @@
         DrawScene();
     }
 
-    function SetSpecularity(param){
+    function SetSpecularityR(param){
         var exp = param.value;
         var s = exp/100;
-        document.getElementById('specularity-value').innerText = exp;
-        meshDrawerUpper.setSpecularity(s);
-        meshDrawerLower.setSpecularity(s);
+        document.getElementById('specularityR-value').innerText = exp;
+        meshDrawerUpper.setSpecularityR(s);
+        meshDrawerLower.setSpecularityR(s);
+        DrawScene();
+    }
+    function SetSpecularityG(param){
+        var exp = param.value;
+        var s = exp/100;
+        document.getElementById('specularityG-value').innerText = exp;
+        meshDrawerUpper.setSpecularityG(s);
+        meshDrawerLower.setSpecularityG(s);
+        DrawScene();
+    }
+    function SetSpecularityB(param){
+        var exp = param.value;
+        var s = exp/100;
+        document.getElementById('specularityB-value').innerText = exp;
+        meshDrawerUpper.setSpecularityB(s);
+        meshDrawerLower.setSpecularityB(s);
         DrawScene();
     }
 
@@ -1430,7 +1446,9 @@
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
     <div class="control"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
     <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">1</span><input id="shininess-exp" type="range" min="0" max="100" value="1" oninput="SetShininess(this)"/></div>
-    <div class="control"><span id="specularity-label">Specularity:</span><span id="specularity-value">30</span><input id="specularity-exp" type="range" min="0" max="100" value="30" oninput="SetSpecularity(this)"/></div>
+    <div class="control"><span id="specularityR-label">Red specularity:</span><span id="specularityR-value">1</span><input id="specularityR-exp" type="range" min="0" max="3" value="1" oninput="SetSpecularityR(this)"/></div>
+    <div class="control"><span id="specularityG-label">Green specularity:</span><span id="specularityG-value">1</span><input id="specularityG-exp" type="range" min="0" max="3" value="1" oninput="SetSpecularityG(this)"/></div>
+    <div class="control"><span id="specularityB-label">Blue specularity:</span><span id="specularityB-value">1</span><input id="specularityB-exp" type="range" min="0" max="3" value="1" oninput="SetSpecularityB(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
     <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
@@ -1443,7 +1461,6 @@
     <div class="control"><input type="button" value="Pause Simulation" onclick="PauseSimulation()"></div>
     <div class="control"><input type="button" value="Resume Simulation" onclick="CreateAnimation()"></div>
     <div class="control"><input type="button" value="Reset Simulation" onclick="Reset()"></div>
-    <!--<div class="control">Texture image:<br/><input id="texture" type="file" onchange="LoadTexture(this)" accept="image/*"/></div>-->
     </div>
     </div>
     </div>

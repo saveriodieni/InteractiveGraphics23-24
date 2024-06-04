@@ -20,11 +20,9 @@ var objVS0 = `
 var objFS0 = `
 	precision mediump float;
 
-	uniform vec3 Ka; 
 	uniform vec3 Kd; 
 	uniform vec3 Ks; 
 	uniform float shininessVal; 
-	uniform vec3 Ia; 
 	uniform vec3 Id; 
 	uniform vec3 lightPos; 
 
@@ -50,7 +48,7 @@ var objFS0 = `
 			specular = pow(specAngle, shininessVal);
 		}
 
-		vec3 finalColor = Ka * Ia + Kd * lambertian * Id + Ks * specular * Id;
+		vec3 finalColor = Kd * lambertian * Id + Ks * specular * Id;
 
 		gl_FragColor = vec4(finalColor, 1.0);
 	}
@@ -85,17 +83,16 @@ var objFS1 = `
 	uniform sampler2D tex;
 	varying vec2 texCoord;
 
-	uniform vec3 Ka; 
 	uniform vec3 Kd; 
 	uniform vec3 Ks; 
 	uniform float shininessVal; 
-	uniform vec3 Ia; 
 	uniform vec3 Id; 
 	uniform vec3 lightPos;
 	uniform vec3 campos;
 
 	varying vec3 normalInterp; 
 	varying vec3 vertPos; 
+	uniform samplerCube envMap;
 
 	void main() {
 		vec3 N = normalize(normalInterp);
@@ -114,11 +111,12 @@ var objFS1 = `
 		}
 
 		// Combining the final color
-		vec3 ambient = Ka * Ia;
-		vec3 diffuse = Kd * lambertian * Id;
-		vec3 spec = Ks * specular * Id;
+		vec3 dir = reflect( -V, N );
+		vec3 ambient = Ks * textureCube( envMap, dir.xyz ).rgb;
 		vec4 texColor = texture2D(tex, texCoord);
-		vec3 finalColor = ambient + (diffuse + spec) * texColor.rgb;
+		vec3 diffuse = texColor.rgb * lambertian * Id;
+		vec3 spec = Ks * specular * Id;
+		vec3 finalColor = ambient + diffuse + spec ;
 
 		gl_FragColor = vec4(finalColor, 1.0);
 	}
@@ -189,10 +187,8 @@ class MeshDrawer
 		this.texCoords;
 		this.normals;
 
-		this.Ka = [0,0,0];
 		this.Kd = [165/255, 42/255, 42/255];
-		this.Ks = [1.0, 1.0, 1.0];
-		this.Ia = [0,0,0];
+		this.Ks = [0.01, 0.01, 0.01];
 		this.Id = [1.0,1.0,1.0];
 	}
 	
@@ -279,14 +275,13 @@ class MeshDrawer
 			gl.uniformMatrix3fv(gl.getUniformLocation( program, 'NormalMatrix' ), false, matrixNormal);
 			posAttrib=gl.getAttribLocation(program, 'pos');
 			normalAttribute=gl.getAttribLocation(program,"norm");
-			gl.uniform3fv(gl.getUniformLocation(program, 'lightPos'), this.lightPos);
-			gl.uniform3fv(gl.getUniformLocation(program, 'Ka'), this.Ka); 
+			gl.uniform3fv(gl.getUniformLocation(program, 'lightPos'), this.lightPos); 
 			gl.uniform3fv(gl.getUniformLocation(program, 'Kd'), this.Kd); 
 			gl.uniform3fv(gl.getUniformLocation(program, 'Ks'), this.Ks); 
 			gl.uniform1f(gl.getUniformLocation(program, 'shininessVal'), this.shininess); 
-			gl.uniform3fv(gl.getUniformLocation(program, 'Ia'), this.Ia);
 			gl.uniform3fv(gl.getUniformLocation(program, 'Id'), this.Id);
 			gl.uniform3fv(gl.getUniformLocation(program, 'campos'), campos);
+			gl.uniform1i(gl.getUniformLocation(program, 'envMap'), 1);
 			
 			posAttrib=gl.getAttribLocation(program, 'pos');
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.position_buffer);
@@ -318,6 +313,11 @@ class MeshDrawer
 		// [TO-DO] Bind the texture
 
 		this.useTexture=true;
+
+		gl.activeTexture(gl.TEXTURE1); // Passa alla texture unit 1
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, environmentTexture);
+		gl.texParameteri( gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR );
+
 		var tex=gl.createTexture();
 
 		gl.activeTexture(gl.TEXTURE0);
@@ -357,8 +357,14 @@ class MeshDrawer
 		this.shininess=shininess;
 	}
 
-	setSpecularity(specularity){
-		this.Ks=[specularity,specularity,specularity];
+	setSpecularityR(specularity){
+		this.Ks[0]=specularity;
+	}
+	setSpecularityG(specularity){
+		this.Ks[1]=specularity;
+	}
+	setSpecularityB(specularity){
+		this.Ks[2]=specularity;
 	}
 
 }

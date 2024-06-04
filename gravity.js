@@ -41,6 +41,7 @@ var iteration;
 var holesQueue;
 var whiteBallInHole = false;
 var ballInHole=new Array(15).fill(false);
+var previousPositions = undefined;
 
 // This function is called for every step of the simulation.
 // Its job is to advance the simulation for the given time step duration dt.
@@ -64,6 +65,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
     if (iteration === undefined){
         iteration = 0;
         holesQueue = Array(6).fill().map(() => []);
+        previousPositions = new Array(positions.length).fill(new Vec3(0,0,0));
     }
     else iteration++;
     
@@ -75,28 +77,30 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
         }
     }
 
-    if(sendImpule){
+    if(sendImpule && whiteBallInHole){
+        if(velocities[15].z!=0.0){
+            console.log(velocities[15]);
+            velocities[15]=new Vec3(0,0,0);
+        }
         for(var i=0; i<holes.length;i++){
-            if(positions[15].x==holes[i].x && positions[15].y == holes[i].y){
-                sleep(2000);
-                var collision=true;
-                var aux;
-                while(collision){
-                    collision=false;
-                    var x=Math.random()*4;
-                    if(x>2) x=x-2;
-                    else x=-x;
-                    aux=new Vec3(x,4,0);
-                    for(var i=0;i<positions.length-1;i++){
-                        if((positions[i].sub(aux)).len()<2*radii[i]) collision=true;
-                        continue;
-                    }
+            sleep(2000);
+            var collision=true;
+            var aux;
+            while(collision){
+                collision=false;
+                var x=Math.random()*4;
+                if(x>2) x=x-2;
+                else x=-x;
+                aux=new Vec3(x,4,0);
+                for(var i=0;i<positions.length-1;i++){
+                    if((positions[i].sub(aux)).len()<2*radii[i]) collision=true;
+                    continue;
                 }
-                positions[15]=aux;
-                velocities[15]=new Vec3(0,0,0);
-                whiteBallInHole = true;
-                break;
             }
+            positions[15]=aux;
+            velocities[15]=new Vec3(0,0,0);
+            whiteBallInHole = false;
+            break;
         }
     }
     
@@ -110,7 +114,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             var impulse = new Vec3(0, -5000.0, 0);
             forces[i] = forces[i].add(impulse);
         }
-        else if(sendImpule && i == positions.length - 1 && !whiteBallInHole){
+        else if(sendImpule && i == positions.length - 1 && !whiteBallInHole && iteration%10==0){
             var x = Math.random()*10000;
             var y = Math.random()*10000;
             if(x>5000) x=x-5000;
@@ -121,6 +125,8 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             forces[i] = forces[i].add(impulse);
         }
     }
+
+    console.log(positions[15],velocities[15],forces[15],whiteBallInHole);
 
     for (var i = 0; i < positions.length; i++) {
         if (velocities[i].len() < 0.01) {
@@ -197,6 +203,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
                 positions[i].y=5.55*Math.sign(positions[i].y);
                 if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
                 else velocities[i]=new Vec3(0,0,0);
+                if(i==15) whiteBallInHole=true;
             }
             else{
                 if((Math.abs(positions[i].x)+radii[i])>=2.85){//{left,right} wall
@@ -235,6 +242,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
                     positions[i].z=-1.0;
                     velocities[i]=new Vec3(0,0,0);
                 }
+                if(i==15) whiteBallInHole=true;
             }
             else{
                 if((Math.abs(positions[i].x)+radii[i])>=2.85){//{left,right} wall
@@ -286,107 +294,136 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
 			positions[i].z = -1.0;
             velocities[i].z = 0.0;
 		}
-        if(positions[i].z<0.0){
-            velocities[i].x = 0.0;
-            velocities[i].y= 0.0;
-        }
 	}
 
     // Reset particles that fall into holes and add to the queue
 	for (var i = 0; i < positions.length; i++) {
-		if(positions[i].x==-3.0 && positions[i].y==5.55){
-            if(!holesQueue[0].includes(i)){
-                if(holesQueue[0].length<3){
-                    holesQueue[0].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                }
-                else{
-                    var ballIndex=holesQueue[0].shift();
-                    holesQueue[0].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                    positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
-                    velocities[ballIndex]=new Vec3(0,0,0);
-                }
-            }
-        }
-        else if(positions[i].x==3.0 && positions[i].y==5.55){
-            if(!holesQueue[1].includes(i)){
-                if(holesQueue[1].length<3){
-                    holesQueue[1].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                }
-                else{
-                    var ballIndex=holesQueue[1].shift();
-                    holesQueue[1].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                    positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
-                    velocities[ballIndex]=new Vec3(0,0,0);
+        if((i!=15 && !ballInHole[i]) || i==15){
+            if(positions[i].x==-3.0 && positions[i].y==5.55){
+                if(!holesQueue[0].includes(i)){
+                    if(holesQueue[0].length<3){
+                        holesQueue[0].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                    }
+                    else{
+                        var ballIndex=holesQueue[0].shift();
+                        holesQueue[0].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                        if(ballIndex!=15){
+                            positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
+                            velocities[ballIndex]=new Vec3(0,0,0);
+                        }
+                    }
                 }
             }
-        }
-        else if(positions[i].x==-3.0 && positions[i].y==0.0){
-            if(!holesQueue[2].includes(i)){
-                if(holesQueue[2].length<3){
-                    holesQueue[2].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                }
-                else{
-                    var ballIndex=holesQueue[2].shift();
-                    holesQueue[2].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                    positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
-                    velocities[ballIndex]=new Vec3(0,0,0);
-                }
-            }
-        }
-        else if(positions[i].x==3.0 && positions[i].y==0.0){
-            if(!holesQueue[3].includes(i)){
-                if(holesQueue[3].length<3){
-                    holesQueue[3].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                }
-                else{
-                    var ballIndex=holesQueue[3].shift();
-                    holesQueue[3].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                    positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
-                    velocities[ballIndex]=new Vec3(0,0,0);
+            else if(positions[i].x==3.0 && positions[i].y==5.55){
+                if(!holesQueue[1].includes(i)){
+                    if(holesQueue[1].length<3){
+                        holesQueue[1].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                    }
+                    else{
+                        var ballIndex=holesQueue[1].shift();
+                        holesQueue[1].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                        if(ballIndex!=15){
+                            positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
+                            velocities[ballIndex]=new Vec3(0,0,0);
+                        }
+                    }
                 }
             }
-        }
-        else if(positions[i].x==-3.0 && positions[i].y==-5.55){
-            if(!holesQueue[4].includes(i)){
-                if(holesQueue[4].length<3){
-                    holesQueue[4].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                }
-                else{
-                    var ballIndex=holesQueue[4].shift();
-                    holesQueue[4].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                    positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
-                    velocities[ballIndex]=new Vec3(0,0,0);
-                }
-            }
-        }
-        else if(positions[i].x==3.0 && positions[i].y==-5.55){
-            if(!holesQueue[5].includes(i)){
-                if(holesQueue[5].length<3){
-                    holesQueue[5].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                }
-                else{
-                    var ballIndex=holesQueue[5].shift();
-                    holesQueue[5].push(i);
-                    if(i!=15) ballInHole[i]=true;
-                    positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
-                    velocities[ballIndex]=new Vec3(0,0,0);
+            else if(positions[i].x==-3.0 && positions[i].y==0.0){
+                if(!holesQueue[2].includes(i)){
+                    if(holesQueue[2].length<3){
+                        holesQueue[2].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                    }
+                    else{
+                        var ballIndex=holesQueue[2].shift();
+                        holesQueue[2].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                        if(ballIndex!=15){
+                            positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
+                            velocities[ballIndex]=new Vec3(0,0,0);
+                        }
+                    }
                 }
             }
-        }		
+            else if(positions[i].x==3.0 && positions[i].y==0.0){
+                if(!holesQueue[3].includes(i)){
+                    if(holesQueue[3].length<3){
+                        holesQueue[3].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                    }
+                    else{
+                        var ballIndex=holesQueue[3].shift();
+                        holesQueue[3].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                        if(ballIndex!=15){
+                            positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
+                            velocities[ballIndex]=new Vec3(0,0,0);
+                        }
+                    }
+                }
+            }
+            else if(positions[i].x==-3.0 && positions[i].y==-5.55){
+                if(!holesQueue[4].includes(i)){
+                    if(holesQueue[4].length<3){
+                        holesQueue[4].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                    }
+                    else{
+                        var ballIndex=holesQueue[4].shift();
+                        holesQueue[4].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                        if(ballIndex!=15){
+                            positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
+                            velocities[ballIndex]=new Vec3(0,0,0);
+                        }
+                    }
+                }
+            }
+            else if(positions[i].x==3.0 && positions[i].y==-5.55){
+                if(!holesQueue[5].includes(i)){
+                    if(holesQueue[5].length<3){
+                        holesQueue[5].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                    }
+                    else{
+                        var ballIndex=holesQueue[5].shift();
+                        holesQueue[5].push(i);
+                        if(i!=15) ballInHole[i]=true;
+                        if(ballIndex!=15){
+                            positions[ballIndex]=new Vec3(Math.random(),Math.random(),-1);
+                            velocities[ballIndex]=new Vec3(0,0,0);
+                        }
+                    }
+                }
+            }	
+        }	
 	}
 
-    if(whiteBallInHole) {
-        whiteBallInHole = false;
+    for(var i=0;i<positions.length;i++){
+        if(positions[i].x==previousPositions[i].x){
+            velocities[i].x=0.0;
+        }
+        if(positions[i].y==previousPositions[i].y){
+            velocities[i].y=0.0;
+        }
+        if(positions[i].z==previousPositions[i].z){
+            velocities[i].z=0.0;
+        }
+        previousPositions[i]=positions[i];
+    }
+
+    for(var i=0;i<positions.length-1;i++){
+        if(!ballInHole[i]){
+            positions[i].z=0.0;
+        }
+    }
+
+    if(positions[15].z<0.0 && !whiteBallInHole){
+        positions[15].z=0.0;
     }
 }
