@@ -63,6 +63,25 @@
     varying vec3     pos;
     varying vec3     normal;
     uniform float blurScale;
+
+    mat3 buildMotionBlurMatrix(vec3 angularVelocity, float time) {
+        float angle = length(angularVelocity) * time; 
+        if(angle > 0.0) {
+            vec3 axis = normalize(angularVelocity);
+            return mat3(cos(angle) + axis.x * axis.x * (1.0 - cos(angle)),
+                        axis.x * axis.y * (1.0 - cos(angle)) - axis.z * sin(angle),
+                        axis.x * axis.z * (1.0 - cos(angle)) + axis.y * sin(angle),
+                        axis.y * axis.x * (1.0 - cos(angle)) + axis.z * sin(angle),
+                        cos(angle) + axis.y * axis.y * (1.0 - cos(angle)),
+                        axis.y * axis.z * (1.0 - cos(angle)) - axis.x * sin(angle),
+                        axis.z * axis.x * (1.0 - cos(angle)) - axis.y * sin(angle),
+                        axis.z * axis.y * (1.0 - cos(angle)) + axis.x * sin(angle),
+                        cos(angle) + axis.z * axis.z * (1.0 - cos(angle)));
+        }
+        else{
+            return mat3(1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0);
+        } 
+    }
     
     void main()
     {
@@ -74,7 +93,8 @@
 
         for (int i = 0; i < numSamples; i++) {
             float t = pow(float(i) / float(numSamples - 1), 2.0); // Exponential distribution
-            vec3 blurPos = pos + t * angularVelocity * blurScale;
+            mat3 blurMatrix = buildMotionBlurMatrix(angularVelocity, t * blurScale);
+            vec3 blurPos = pos * blurMatrix;
             vec3 blurView = normalize(campos - blurPos);
             vec3 blurL = normalize(light.position - blurPos);
             float blurC = dot(nrm, blurL);
@@ -584,6 +604,9 @@
         }
         meshDrawerUpper.setMesh( buffers.positionBuffer, buffers.texCoordBuffer, buffers.normalBuffer );
         meshDrawerUpper.swapYZ(true);
+        meshDrawerUpper.setSpecularityR(0.0);
+        meshDrawerUpper.setSpecularityG(0.0);
+        meshDrawerUpper.setSpecularityB(0.0);
         var img = new Image();
         img.src = 'pool-table/wood_wallnut.png';
         img.onload = function() {
@@ -1180,7 +1203,6 @@
         var exp = param.value;
         var s = exp/100;
         document.getElementById('specularityR-value').innerText = exp;
-        meshDrawerUpper.setSpecularityR(s);
         meshDrawerLower.setSpecularityR(s);
         DrawScene();
     }
@@ -1188,7 +1210,6 @@
         var exp = param.value;
         var s = exp/100;
         document.getElementById('specularityG-value').innerText = exp;
-        meshDrawerUpper.setSpecularityG(s);
         meshDrawerLower.setSpecularityG(s);
         DrawScene();
     }
@@ -1196,7 +1217,6 @@
         var exp = param.value;
         var s = exp/100;
         document.getElementById('specularityB-value').innerText = exp;
-        meshDrawerUpper.setSpecularityB(s);
         meshDrawerLower.setSpecularityB(s);
         DrawScene();
     }
@@ -1264,8 +1284,8 @@
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
     <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
-    <div class="control"><span id="gravity-label">Gravity:</span><span id="gravity-value">1</span><input id="gravity-exp" type="range" min="1" max="100" value="1" oninput="updateGravity(this)"/></div>
-    <div class="control"><span id="mass-label">Mass:</span><span id="mass-value">2</span><input id="mass-exp" type="range" min="1" max="15" value="2" oninput="updateMass(this)"/></div>
+    <div class="control"><span id="gravity-label">Gravity:</span><span id="gravity-value">1</span><input id="gravity-exp" type="range" min="1" max="30" value="1" oninput="updateGravity(this)"/></div>
+    <div class="control"><span id="mass-label">Mass:</span><span id="mass-value">2</span><input id="mass-exp" type="range" min="1" max="10" value="2" oninput="updateMass(this)"/></div>
     <div class="control-group">
     <div class="control"><input type="button" value="Start Simulation" onclick="StartSimulation()" id="start"></div>
     <div class="control"><input type="button" value="Pause Simulation" onclick="PauseSimulation()" id="pause" hidden></div>

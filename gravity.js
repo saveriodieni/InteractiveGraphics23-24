@@ -57,7 +57,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
 
     function nearToHole(index){
         for(var i=0;i<holes.length;i++){
-            if((positions[index].sub(holes[i])).len()<0.5) return true;
+            if((positions[index].sub(holes[i])).len()<0.3) return true;
         }
         return false;
     }
@@ -71,7 +71,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
     
     var sendImpule=true;
     for(var i=0;i<positions.length;i++){
-        if(Math.sqrt(velocities[i].x*velocities[i].x + velocities[i].y * velocities[i].y)>0.01){
+        if(Math.sqrt(velocities[i].x*velocities[i].x + velocities[i].y * velocities[i].y)>0.01 && !ballInHole[i]){
             sendImpule=false;
             break;
         }
@@ -79,7 +79,6 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
 
     if(sendImpule && whiteBallInHole){
         if(velocities[15].z!=0.0){
-            console.log(velocities[15]);
             velocities[15]=new Vec3(0,0,0);
         }
         for(var i=0; i<holes.length;i++){
@@ -125,8 +124,6 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             forces[i] = forces[i].add(impulse);
         }
     }
-
-    console.log(positions[15],velocities[15],forces[15],whiteBallInHole);
 
     for (var i = 0; i < positions.length; i++) {
         if (velocities[i].len() < 0.01) {
@@ -198,6 +195,14 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
     for (var i = 0; i < positions.length; i++) {
         if((Math.abs(positions[i].x)+radii[i])>2.7 && (Math.abs(positions[i].y)+radii[i])>5.25){ // {up-left,up-right,bottom-left,bottom-right} hole
             if(nearToHole(i)){
+                positions[i].x=3.0*Math.sign(positions[i].x);
+                if(positions[i].z>=0.0) positions[i].z=-0.2;
+                positions[i].y=5.55*Math.sign(positions[i].y);
+                if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
+                else velocities[i]=new Vec3(0,0,0);
+                if(i==15) whiteBallInHole=true;
+            }
+            else if((Math.abs(positions[i].x)+radii[i])>=2.8 && (Math.abs(positions[i].y)+radii[i])>=5.35){ // avoiding errors between subsequent events
                 positions[i].x=3.0*Math.sign(positions[i].x);
                 if(positions[i].z>=0.0) positions[i].z=-0.2;
                 positions[i].y=5.55*Math.sign(positions[i].y);
