@@ -249,6 +249,17 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
                 }
                 if(i==15) whiteBallInHole=true;
             }
+            else if((Math.abs(positions[i].y)+radii[i])<0.2 && (Math.abs(positions[i].x)+radii[i])>2.9){ // avoiding errors between subsequent events
+                positions[i].x=3.0*Math.sign(positions[i].x);
+                if(positions[i].z>=0.0) positions[i].z=-0.2;
+                positions[i].y=0.0;
+                if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
+                else {
+                    positions[i].z=-1.0;
+                    velocities[i]=new Vec3(0,0,0);
+                }
+                if(i==15) whiteBallInHole=true;
+            }
             else{
                 if((Math.abs(positions[i].x)+radii[i])>=2.85){//{left,right} wall
                     var lengthPos=velocities[i].len();

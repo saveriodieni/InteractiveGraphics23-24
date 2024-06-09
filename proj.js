@@ -117,9 +117,9 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
     }
 
     Material groundMaterial;
-    groundMaterial.k_d=vec3(136/255, 45/255, 23/255);
+    groundMaterial.k_d=vec3(0/255, 255/255, 0/255);
     groundMaterial.k_s=vec3(0.01,0.01,0.01);
-    groundMaterial.n=10.0;
+    groundMaterial.n=1.0;
 
     // Check intersection with the ground rectangle
     float t_ground = (-ray.pos.z -0.2) / ray.dir.z; // Intersection with y=0 plane
@@ -146,7 +146,7 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
 // If the ray does not hit a sphere, returns the environment color.
 vec4 RayTracer(Ray ray) {
     vec3 finalColor = vec3(0.0);
-    const int numSamples = 10; // Adjust for more or fewer samples
+    const int numSamples = 5; // Adjust for more or fewer samples
 
     for (int i = 0; i < numSamples; i++) {
         float t = pow(float(i) / float(numSamples - 1), 2.0); // Exponential distribution

@@ -1,60 +1,4 @@
-var objVS0 = `
-	attribute vec3 pos;
-	attribute vec3 norm;
-
-	uniform mat4 mvp;
-	uniform mat4 mv;
-	uniform mat3 NormalMatrix;
-
-	varying vec3 vertPos;
-	varying vec3 normalInterp;
-	void main()
-	{
-		gl_Position = mvp * vec4(pos,1);
-
-		vertPos = vec3(mv * vec4(pos,1));
-		normalInterp = normalize(NormalMatrix * norm);
-	}
-`;
-
-var objFS0 = `
-	precision mediump float;
-
-	uniform vec3 Kd; 
-	uniform vec3 Ks; 
-	uniform float shininessVal; 
-	uniform vec3 Id; 
-	uniform vec3 lightPos; 
-
-	varying vec3 normalInterp; 
-	varying vec3 vertPos; 
-
-	void main() {
-		
-		vec3 N = normalize(normalInterp);
-		vec3 L = normalize(lightPos - vertPos);
-
-		float lambertian = max(dot(N, L), 0.0);
-
-		float specular = 0.0;
-
-		if (lambertian > 0.0) {
-			vec3 R = reflect(-L, N);
-
-			vec3 V = normalize(-vertPos);
-
-			float specAngle = max(dot(R, V), 0.0);
-
-			specular = pow(specAngle, shininessVal);
-		}
-
-		vec3 finalColor = Kd * lambertian * Id + Ks * specular * Id;
-
-		gl_FragColor = vec4(finalColor, 1.0);
-	}
-	`;
-
-	var objVS1 = `
+var objVS1 = `
 	attribute vec3 pos;
 	attribute vec3 norm;
 
@@ -122,6 +66,70 @@ var objFS1 = `
 	}
 `;
 
+var objShadows = `
+	precision mediump float;
+
+	uniform sampler2D tex;
+	varying vec2 texCoord;
+
+	uniform vec3 Kd;
+	uniform vec3 Ks;
+	uniform float shininessVal;
+	uniform vec3 Id;
+	uniform vec3 lightPos;
+	uniform vec3 campos;
+
+	varying vec3 normalInterp;
+	varying vec3 vertPos;
+	uniform samplerCube envMap;
+	uniform vec3 centers[16];
+	uniform float radius;
+	uniform float shadowIntensity;
+
+	void main() {
+		vec3 N = normalize(normalInterp);
+		vec3 V = normalize(campos - vertPos);
+
+		// Lambertian shading (diffuse)
+		vec3 L = normalize(lightPos - vertPos);
+		float lambertian = max(dot(N, L), 0.0);
+
+		// Blinn-Phong shading (specular)
+		float specular = 0.0;
+		if (lambertian > 0.0) {
+			vec3 H = normalize(L + V); // Vettore metà
+			float specAngle = max(dot(N, H), 0.0);
+			specular = pow(specAngle, shininessVal);
+		}
+
+		// Combining the final color
+		vec3 dir = reflect(-V, N);
+		vec3 ambient = Ks * textureCube(envMap, dir).rgb;
+		vec4 texColor = texture2D(tex, texCoord);
+		vec3 diffuse = texColor.rgb * lambertian * Id;
+
+		// compute shadows
+		bool inShadow = false;
+		for (int i = 0; i < 16; i++) {
+			vec3 sphereCenter = centers[i];
+			vec3 sphereToIntersection = vertPos - sphereCenter;
+			float distanceToSphere = length(sphereToIntersection);
+			if (distanceToSphere <= sqrt(2.0)*radius) {
+				inShadow = true;
+				break;
+			}
+		}
+
+		if (inShadow) {
+			diffuse *= shadowIntensity;
+		}
+
+		vec3 spec = Ks * specular * Id;
+		vec3 finalColor = ambient + diffuse + spec;
+		gl_FragColor = vec4(finalColor, 1.0);
+	}
+`;
+
 
 // This function takes the translation and two rotation angles (in radians) as input arguments.
 // The two rotations are applied around x and y axes.
@@ -165,14 +173,11 @@ class MeshDrawer
 	constructor()
 	{
 		// [TO-DO] initializations
-		this.useTexture=false;
-		this.texture=true;
-		this.model=false;
 
-		this.lightPos = [0,0,10];//,5.0, 5.0, 10,-5.0, -5.0, 10,-5.0, 5.0, 10,5.0, -5.0, 10];
+		this.lightPos = [0,10,0];//,5.0, 5.0, 10,-5.0, -5.0, 10,-5.0, 5.0, 10,5.0, -5.0, 10];
 
 		// Compile the shader program
-		this.prog0 = InitShaderProgram( objVS0, objFS0 );
+		this.prog0 = InitShaderProgram( objVS1, objShadows );
 
 		this.prog1 = InitShaderProgram( objVS1, objFS1 );
 
@@ -206,7 +211,6 @@ class MeshDrawer
 	setMesh( vertPos, texCoords, normals )
 	{
 		// [TO-DO] Update the contents of the vertex buffer objects.
-		this.model=true;
 		this.numTriangles = vertPos.length / 3;
 
 		this.position_buffer=gl.createBuffer();
@@ -252,75 +256,79 @@ class MeshDrawer
 	// the model-view transformation matrixMV, the same matrix returned
 	// by the GetModelViewProjection function above, and the normal
 	// transformation matrix, which is the inverse-transpose of matrixMV.
-	draw( matrixMVP, matrixMV, matrixNormal , campos)
+	draw( shadows,matrixMVP, matrixMV, matrixNormal , campos)
 	{
 		// [TO-DO] Complete the WebGL initializations before drawing
-		if(this.model){
-			var program;
-			if(this.useTexture && this.texture) {
-				program=this.prog1;
-				this.programInUse="prog1";
-			}
-			else{
-				program=this.prog0;
-				this.programInUse="prog0";
-			}
-
-			var normalAttribute;
-			var posAttrib;
-		
-			gl.useProgram( program );
-			gl.uniformMatrix4fv(gl.getUniformLocation( program, 'mvp' ), false, matrixMVP );
-			gl.uniformMatrix4fv(gl.getUniformLocation( program, 'mv' ), false, matrixMV);
-			gl.uniformMatrix3fv(gl.getUniformLocation( program, 'NormalMatrix' ), false, matrixNormal);
-			posAttrib=gl.getAttribLocation(program, 'pos');
-			normalAttribute=gl.getAttribLocation(program,"norm");
-			gl.uniform3fv(gl.getUniformLocation(program, 'lightPos'), this.lightPos); 
-			gl.uniform3fv(gl.getUniformLocation(program, 'Kd'), this.Kd); 
-			gl.uniform3fv(gl.getUniformLocation(program, 'Ks'), this.Ks); 
-			gl.uniform1f(gl.getUniformLocation(program, 'shininessVal'), this.shininess); 
-			gl.uniform3fv(gl.getUniformLocation(program, 'Id'), this.Id);
-			gl.uniform3fv(gl.getUniformLocation(program, 'campos'), campos);
-			gl.uniform1i(gl.getUniformLocation(program, 'envMap'), 1);
-			
-			posAttrib=gl.getAttribLocation(program, 'pos');
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.position_buffer);
-			gl.vertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 0, 0);
-			gl.enableVertexAttribArray(posAttrib);
-
-			if(this.useTexture && this.texture){
-				gl.uniformMatrix4fv(gl.getUniformLocation( program, 'mvp' ), false, matrixMVP);
-				
-				var texCoordAttrib = gl.getAttribLocation(program, 'txc');
-				gl.bindBuffer(gl.ARRAY_BUFFER, this.color_buffer);
-				gl.vertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
-				gl.enableVertexAttribArray(texCoordAttrib);
-			}
-		
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.normal_buffer);
-			gl.vertexAttribPointer(normalAttribute,3,gl.FLOAT,false,0,0);
-			gl.enableVertexAttribArray(normalAttribute);
-			
-			gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles );
-	
+		var program;
+		if(shadows){
+			program=this.prog0;
+			this.programInUse="prog0";
 		}
+		else{
+			program=this.prog1;
+			this.programInUse="prog1";
+		}		
+
+		var normalAttribute;
+		var posAttrib;
+	
+		gl.useProgram( program );
+		gl.uniformMatrix4fv(gl.getUniformLocation( program, 'mvp' ), false, matrixMVP );
+		gl.uniformMatrix4fv(gl.getUniformLocation( program, 'mv' ), false, matrixMV);
+		gl.uniformMatrix3fv(gl.getUniformLocation( program, 'NormalMatrix' ), false, matrixNormal);
+		posAttrib=gl.getAttribLocation(program, 'pos');
+		normalAttribute=gl.getAttribLocation(program,"norm");
+		var aux = MatrixMult(matrixMV,[this.lightPos[0],this.lightPos[1],this.lightPos[2],1.0]).slice(0,3);
+		gl.uniform3fv(gl.getUniformLocation(program, 'lightPos'), aux); 
+		gl.uniform3fv(gl.getUniformLocation(program, 'Kd'), this.Kd); 
+		gl.uniform3fv(gl.getUniformLocation(program, 'Ks'), this.Ks); 
+		gl.uniform1f(gl.getUniformLocation(program, 'shininessVal'), this.shininess); 
+		gl.uniform3fv(gl.getUniformLocation(program, 'Id'), this.Id);
+		gl.uniform3fv(gl.getUniformLocation(program, 'campos'), campos);
+		gl.uniform1i(gl.getUniformLocation(program, 'envMap'), 1);
+		gl.uniform1i(gl.getUniformLocation(program, 'tex'), this.textureUnit);
+		
+		posAttrib=gl.getAttribLocation(program, 'pos');
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.position_buffer);
+		gl.vertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(posAttrib);
+
+		gl.uniformMatrix4fv(gl.getUniformLocation( program, 'mvp' ), false, matrixMVP);
+		
+		var texCoordAttrib = gl.getAttribLocation(program, 'txc');
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.color_buffer);
+		gl.vertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(texCoordAttrib);
+
+		if(shadows){
+			for(var i=0;i<spheres.length;i++){
+				var aux = MatrixMult(matrixMV,[spheres[i].center[0],spheres[i].center[1],spheres[i].center[2],1.0]).slice(0,3);
+				gl.uniform3fv( gl.getUniformLocation( program, 'centers['+i+']' ), aux );
+			}
+			gl.uniform1f( gl.getUniformLocation( program, 'shadowIntensity' ), parseInt(document.getElementById('shadow-value').innerText)/100 );
+			gl.uniform1f( gl.getUniformLocation( program, 'radius' ), spheres[0].radius );
+		}
+	
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.normal_buffer);
+		gl.vertexAttribPointer(normalAttribute,3,gl.FLOAT,false,0,0);
+		gl.enableVertexAttribArray(normalAttribute);
+		
+		gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles );
 	}
 	
 	// This method is called to set the texture of the mesh.
 	// The argument is an HTML IMG element containing the texture data.
-	setTexture( img )
+	setTexture( img , unit )
 	{
 		// [TO-DO] Bind the texture
-
-		this.useTexture=true;
-
-		gl.activeTexture(gl.TEXTURE1); // Passa alla texture unit 1
+		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_CUBE_MAP, environmentTexture);
 		gl.texParameteri( gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR );
 
 		var tex=gl.createTexture();
 
-		gl.activeTexture(gl.TEXTURE0);
+		if (unit == 0) gl.activeTexture(gl.TEXTURE0);
+		else if (unit == 2) gl.activeTexture(gl.TEXTURE2);
 		gl.bindTexture(gl.TEXTURE_2D,tex);
 		// You can set the texture image data using the following command.
 		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img );
@@ -332,15 +340,8 @@ class MeshDrawer
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	}
-	
-	// This method is called when the user changes the state of the
-	// "Show Texture" checkbox. 
-	// The argument is a boolean that indicates if the checkbox is checked.
-	showTexture( show )
-	{
-		// [TO-DO] set the uniform parameter(s) of the fragment shader to specify if it should use the texture.
-		this.texture = show;
+
+		this.textureUnit = unit;
 	}
 	
 	// This method is called to set the incoming light direction

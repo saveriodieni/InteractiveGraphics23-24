@@ -109,7 +109,7 @@
 
                 if (mtl.k_s.r + mtl.k_s.g + mtl.k_s.b > 0.0) {
                     vec3 dir = reflect(-blurView, nrm);
-                    if (dir.z < -0.05) color += mtl.k_s * vec3(136/255, 45/255, 23/255) * blurC / float(numSamples);
+                    if (dir.z < -0.75) color += mtl.k_s * vec3(0, 255/255, 0) * blurC / float(numSamples);
                     else color += mtl.k_s * textureCube(envMap, dir.xzy).rgb * blurC / float(numSamples);
                 }
             }
@@ -156,6 +156,8 @@
     var omega = Array(fixed_spheres.length).fill(new Vec3(0, 0, 0)); // Angular velocity for each particle;
     var list_of_centers;
     var restitution;
+    var activeShadows = false;
+    var activeReflections = false;
 
     function TriSphere(subdiv)
     {
@@ -321,7 +323,7 @@
                 gl.uniform3fv(angularVelocityLocation, aux);
             }
             const blurScaleLocation = gl.getUniformLocation(this.prog, 'blurScale');
-            var blurScale=parseInt(document.getElementById('blur-value').innerText)/100;
+            var blurScale=parseInt(document.getElementById('blur-value').innerText)/10;
             gl.uniform1f(blurScaleLocation, blurScale);
             triSphere.draw( this.vp );
         }
@@ -576,7 +578,7 @@
         gl.texParameteri( gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR );
     }
 
-    function LoadObjUpper( param )
+    function LoadObjUpper()
     {
         var meshData=upperMesh;
         var mesh = new ObjMesh;
@@ -599,18 +601,15 @@
         for(var i=0;i<buffers.positionBuffer.length;i++){
             buffers.positionBuffer[i]*=6;
             if(i%3==1){
-                buffers.positionBuffer[i]-=0.3;
+                buffers.positionBuffer[i]-=0.285;
             }
         }
         meshDrawerUpper.setMesh( buffers.positionBuffer, buffers.texCoordBuffer, buffers.normalBuffer );
         meshDrawerUpper.swapYZ(true);
-        meshDrawerUpper.setSpecularityR(0.0);
-        meshDrawerUpper.setSpecularityG(0.0);
-        meshDrawerUpper.setSpecularityB(0.0);
         var img = new Image();
-        img.src = 'pool-table/wood_wallnut.png';
+        img.src = "pool-table/linen-texture-green-tones.jpg";
         img.onload = function() {
-            meshDrawerUpper.setTexture( img );
+            meshDrawerUpper.setTexture( img , 2 );
             //DrawScene();
         }
     }
@@ -646,7 +645,7 @@
         var img = new Image();
         img.src = 'pool-table/wood_wallnut.png';
         img.onload = function() {
-            meshDrawerLower.setTexture( img );
+            meshDrawerLower.setTexture( img , 0 );
         }
     }
     
@@ -769,13 +768,13 @@
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
     
         // Rasterization
-        if ( document.getElementById('raster').checked ) {
+        if ( !activeReflections ) {
             var trans=GetTrans();
             matrixMVP=MatrixMult( perspectiveMatrix, trans.worldToCam );
             var mv=trans.worldToCam;
             var nrmTrans = [ mv[0],mv[1],mv[2], mv[4],mv[5],mv[6], mv[8],mv[9],mv[10] ];
             var campos = [mv[12],mv[13],mv[14]]
-            meshDrawerUpper.draw(false,matrixMVP, mv, nrmTrans, campos);
+            meshDrawerUpper.draw(activeShadows,matrixMVP, mv, nrmTrans, campos);
             meshDrawerLower.draw(false,matrixMVP, mv, nrmTrans, campos);
             
             background.draw( trans );
@@ -784,13 +783,13 @@
         }
         
         // Rasterization + Ray Tracing
-        if ( document.getElementById('secondary').checked ) {
+        if ( activeReflections ) {
             var trans=GetTrans();
             matrixMVP=MatrixMult( perspectiveMatrix, trans.worldToCam );
             var mv=trans.worldToCam;
             var nrmTrans = [ mv[0],mv[1],mv[2], mv[4],mv[5],mv[6], mv[8],mv[9],mv[10] ];
             var campos = [mv[12],mv[13],mv[14]]
-            meshDrawerUpper.draw(true,matrixMVP, mv, nrmTrans, campos);
+            meshDrawerUpper.draw(activeShadows,matrixMVP, mv, nrmTrans, campos);
             meshDrawerLower.draw(false,matrixMVP, mv, nrmTrans, campos);
             secondaryRT.draw( mvp, trans );
         }
@@ -1183,41 +1182,15 @@
         c.style.display = c.style.display == 'none' ? '' : 'none';
     }
 
-    function SetShininess( param )
-    {
-        var exp = param.value;
-        var s = Math.pow(10,exp/25);
-        document.getElementById('shininess-value').innerText = s.toFixed( s < 10 ? 2 : 0 );
-        meshDrawerUpper.setShininess(s);
-        meshDrawerLower.setShininess(s);
-        DrawScene();
-    }
-
     function changeBlur(param){
         var exp = param.value;
         document.getElementById('blur-value').innerText = exp;
         DrawScene();
     }
 
-    function SetSpecularityR(param){
+    function changeShadowIntesity(param){
         var exp = param.value;
-        var s = exp/100;
-        document.getElementById('specularityR-value').innerText = exp;
-        meshDrawerLower.setSpecularityR(s);
-        DrawScene();
-    }
-    function SetSpecularityG(param){
-        var exp = param.value;
-        var s = exp/100;
-        document.getElementById('specularityG-value').innerText = exp;
-        meshDrawerLower.setSpecularityG(s);
-        DrawScene();
-    }
-    function SetSpecularityB(param){
-        var exp = param.value;
-        var s = exp/100;
-        document.getElementById('specularityB-value').innerText = exp;
-        meshDrawerLower.setSpecularityB(s);
+        document.getElementById('shadow-value').innerText = exp;
         DrawScene();
     }
 
@@ -1230,6 +1203,47 @@
         var elem3=document.getElementById("dynamic-friction-value");
         if(parseInt(elem3.innerText)>exp){
             elem3.innerText=exp;
+        }
+    }
+
+    function enableMotionBlur(param){
+        document.getElementById("motion-blur-slider").hidden = !(document.getElementById("motion-blur-slider").hidden);
+        if(document.getElementById("motion-blur-slider").hidden){
+            document.getElementById('blur-value').innerText = 0;
+            DrawScene();
+        }
+        else{
+            document.getElementById('blur-value').innerText = 10;
+            document.getElementById('blur-exp').value = 10;
+            DrawScene();
+        }
+    }
+
+    function enableShadows(param){
+        activeShadows=!activeShadows;
+        document.getElementById("shadow-slider").hidden = !(document.getElementById("shadow-slider").hidden);
+        if(document.getElementById("shadow-slider").hidden){
+            document.getElementById('shadow-value').innerText = 0;
+            DrawScene();
+        }
+        else{
+            document.getElementById('shadow-value').innerText = 30;
+            document.getElementById('shadow-exp').value = 30;
+            DrawScene();
+        }
+    }
+
+    function enableRefelctions(param){
+        activeReflections=!activeReflections;
+        document.getElementById("reflection-slider").hidden = !(document.getElementById("reflection-slider").hidden);
+        if(document.getElementById("reflection-slider").hidden){
+            document.getElementById('bounces-value').innerText = 0;
+            DrawScene();
+        }
+        else{
+            document.getElementById('bounces-value').innerText = 5;
+            document.getElementById('bounces-range').value = 5;
+            DrawScene();
         }
     }
 
@@ -1271,16 +1285,14 @@
     <div id="buttons"><input type="button" value="V" onclick="ShowControls()"/></div>
     <div id="controls">
     <div class="control-group">
-    <div class="control"><input id="raster" name="method" type="radio" onchange="DrawScene()" checked /><label for="raster"> Rasterization</label><br/></div>
-    <div class="control"><input id="secondary" name="method" type="radio" onchange="DrawScene()" /><label for="secondary"> Rasterization + Ray Tracing</label><br/></div>
+    <div class="control"><input id="enable-reflections" name="method" type="checkbox" oninput="enableRefelctions(this)" /><label for="enable-reflections"> Enable Reflections </label><br/></div>
+    <div class="control"><input id="enable-motion-blur" name="method" type="checkbox" oninput="enableMotionBlur(this)" /><label for="enable-motion-blur"> Enable Motion Blur </label><br/></div>
+    <div class="control"><input id="enable-shadows" name="method" type="checkbox" oninput="enableShadows(this)" /><label for="enable-shadows"> Enable Shadows </label><br/></div>
     <div class="control"><hr/></div>
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
-    <div class="control"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
-    <div class="control"><span id="shininess-label">Shininess:</span><span id="shininess-value">1</span><input id="shininess-exp" type="range" min="0" max="100" value="1" oninput="SetShininess(this)"/></div>
-    <div class="control"><span id="blur-label">Blur effect:</span><span id="blur-value">50</span><input id="blur-exp" type="range" min="0" max="100" value="50" oninput="changeBlur(this)"/></div>
-    <div class="control"><span id="specularityR-label">Red specularity:</span><span id="specularityR-value">1</span><input id="specularityR-exp" type="range" min="0" max="3" value="1" oninput="SetSpecularityR(this)"/></div>
-    <div class="control"><span id="specularityG-label">Green specularity:</span><span id="specularityG-value">1</span><input id="specularityG-exp" type="range" min="0" max="3" value="1" oninput="SetSpecularityG(this)"/></div>
-    <div class="control"><span id="specularityB-label">Blue specularity:</span><span id="specularityB-value">1</span><input id="specularityB-exp" type="range" min="0" max="3" value="1" oninput="SetSpecularityB(this)"/></div>
+    <div class="control" hidden id="reflection-slider"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
+    <div class="control" hidden id="motion-blur-slider"><span id="blur-label">Motion Blur effect:</span><span id="blur-value">0</span><input id="blur-exp" type="range" min="0" max="100" value="0" oninput="changeBlur(this)" /></div>
+    <div class="control" hidden id="shadow-slider"><span id="shadow-label">Shadow Intensity:</span><span id="shadow-value">30</span><input id="shadow-exp" type="range" min="0" max="50" value="30" oninput="changeShadowIntesity(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
     <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
