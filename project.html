@@ -312,15 +312,12 @@
             gl.uniform3fv( this.mtl_k_s, sphere.mtl.k_s );
             gl.uniform1f ( this.mtl_n,   sphere.mtl.n   );
             const angularVelocityLocation = gl.getUniformLocation(this.prog, 'angularVelocity');
-            if(index<sphere.length) {
+            if(index<fixed_spheres.length) {
+                console.log(index);
                 var aux=[omega[index].x,omega[index].y,omega[index].z];
                 gl.uniform3fv(angularVelocityLocation, aux);
                 index++;
-            }
-            else{
-                index=0;
-                var aux=[omega[index].x,omega[index].y,omega[index].z];
-                gl.uniform3fv(angularVelocityLocation, aux);
+                if(index == fixed_spheres.length) index = 0;
             }
             const blurScaleLocation = gl.getUniformLocation(this.prog, 'blurScale');
             var blurScale=parseInt(document.getElementById('blur-value').innerText)/10;
