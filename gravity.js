@@ -195,10 +195,10 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
     for (var i = 0; i < positions.length; i++) {
         var x = positions[i].x;
         var y = positions[i].y;
-        var r = radii[i]+0.2;
+        var r = radii[i]+0.22;
         if((x+3)*(x+3)+(y+5.5)*(y+5.5)<=r*r || (x-3)*(x-3)+(y-5.5)*(y-5.5)<=r*r || (x-3)*(x-3)+(y+5.5)*(y+5.5)<=r*r || (x+3)*(x+3)+(y-5.5)*(y-5.5)<=r*r){ // {up-left,up-right,bottom-left,bottom-right} hole        
             positions[i].x=3.0*Math.sign(positions[i].x);
-            if(positions[i].z>=0.0) positions[i].z=-0.2;
+            if(positions[i].z>=0.0) positions[i].z=-0.1;
             positions[i].y=5.55*Math.sign(positions[i].y);
             if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
             else velocities[i]=new Vec3(0,0,0);
@@ -208,7 +208,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
         else if((Math.abs(positions[i].y)+radii[i])<0.3 && (Math.abs(positions[i].x)+radii[i])>2.85){ // {left,right} hole
             if(nearToHole(i)){
                 positions[i].x=3.0*Math.sign(positions[i].x);
-                if(positions[i].z>=0.0) positions[i].z=-0.2;
+                if(positions[i].z>=0.0) positions[i].z=-0.1;
                 positions[i].y=0.0;
                 if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
                 else {
@@ -274,7 +274,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
         if((i!=15 && !ballInHole[i]) || i==15){
             if(positions[i].x==-3.0 && positions[i].y==5.55){
                 if(!holesQueue[0].includes(i)){
-                    if(holesQueue[0].length<2){
+                    if(holesQueue[0].length<1){
                         holesQueue[0].push(i);
                         if(i!=15) ballInHole[i]=true;
                     }
@@ -291,7 +291,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             }
             else if(positions[i].x==3.0 && positions[i].y==5.55){
                 if(!holesQueue[1].includes(i)){
-                    if(holesQueue[1].length<2){
+                    if(holesQueue[1].length<1){
                         holesQueue[1].push(i);
                         if(i!=15) ballInHole[i]=true;
                     }
@@ -308,7 +308,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             }
             else if(positions[i].x==-3.0 && positions[i].y==0.0){
                 if(!holesQueue[2].includes(i)){
-                    if(holesQueue[2].length<2){
+                    if(holesQueue[2].length<1){
                         holesQueue[2].push(i);
                         if(i!=15) ballInHole[i]=true;
                     }
@@ -325,7 +325,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             }
             else if(positions[i].x==3.0 && positions[i].y==0.0){
                 if(!holesQueue[3].includes(i)){
-                    if(holesQueue[3].length<2){
+                    if(holesQueue[3].length<1){
                         holesQueue[3].push(i);
                         if(i!=15) ballInHole[i]=true;
                     }
@@ -342,7 +342,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             }
             else if(positions[i].x==-3.0 && positions[i].y==-5.55){
                 if(!holesQueue[4].includes(i)){
-                    if(holesQueue[4].length<2){
+                    if(holesQueue[4].length<1){
                         holesQueue[4].push(i);
                         if(i!=15) ballInHole[i]=true;
                     }
@@ -359,7 +359,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             }
             else if(positions[i].x==3.0 && positions[i].y==-5.55){
                 if(!holesQueue[5].includes(i)){
-                    if(holesQueue[5].length<2){
+                    if(holesQueue[5].length<1){
                         holesQueue[5].push(i);
                         if(i!=15) ballInHole[i]=true;
                     }

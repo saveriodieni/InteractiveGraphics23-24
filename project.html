@@ -46,6 +46,7 @@
     
     <script id="sphereFS" type="x-shader/x-fragment">
     precision mediump float;
+    uniform sampler2D tex;
     struct Material {
         vec3  k_d;   // diffuse coefficient
         vec3  k_s;   // specular coefficient
@@ -63,6 +64,7 @@
     varying vec3     pos;
     varying vec3     normal;
     uniform float blurScale;
+    uniform int numSamples;
 
     mat3 buildMotionBlurMatrix(vec3 angularVelocity, float time) {
         float angle = length(angularVelocity) * time; 
@@ -89,9 +91,10 @@
         vec3 color = vec3(0, 0, 0);
 
         // Number of samples for blur effect
-        const int numSamples = 10;
+        const int maxNumSamples = 20;
 
-        for (int i = 0; i < numSamples; i++) {
+        for (int i = 0; i < maxNumSamples; i++) {
+            if(i>=numSamples) break;
             float t = pow(float(i) / float(numSamples - 1), 2.0); // Exponential distribution
             mat3 blurMatrix = buildMotionBlurMatrix(angularVelocity, t * blurScale);
             vec3 blurPos = pos * blurMatrix;
@@ -109,7 +112,10 @@
 
                 if (mtl.k_s.r + mtl.k_s.g + mtl.k_s.b > 0.0) {
                     vec3 dir = reflect(-blurView, nrm);
-                    if (dir.z < -0.75) color += mtl.k_s * vec3(0, 255/255, 0) * blurC / float(numSamples);
+                    if (dir.z < -0.0){
+                        vec2 texCoord = vec2(dir.x,dir.y);
+                        color += mtl.k_s * texture2D(tex, texCoord).rgb * blurC / float(numSamples);
+                    }
                     else color += mtl.k_s * textureCube(envMap, dir.xzy).rgb * blurC / float(numSamples);
                 }
             }
@@ -311,9 +317,9 @@
             gl.uniform3fv( this.mtl_k_d, sphere.mtl.k_d );
             gl.uniform3fv( this.mtl_k_s, sphere.mtl.k_s );
             gl.uniform1f ( this.mtl_n,   sphere.mtl.n   );
+            gl.uniform1i ( gl.getUniformLocation( this.prog, 'numSamples' ), parseInt(document.getElementById('samples-value').innerText));
             const angularVelocityLocation = gl.getUniformLocation(this.prog, 'angularVelocity');
             if(index<fixed_spheres.length) {
-                console.log(index);
                 var aux=[omega[index].x,omega[index].y,omega[index].z];
                 gl.uniform3fv(angularVelocityLocation, aux);
                 index++;
@@ -322,6 +328,7 @@
             const blurScaleLocation = gl.getUniformLocation(this.prog, 'blurScale');
             var blurScale=parseInt(document.getElementById('blur-value').innerText)/10;
             gl.uniform1f(blurScaleLocation, blurScale);
+            gl.uniform1i(gl.getUniformLocation(this.prog, 'tex'), 2);
             triSphere.draw( this.vp );
         }
     };
@@ -1191,6 +1198,12 @@
         DrawScene();
     }
 
+    function changeSamples(param){
+        var exp = param.value;
+        document.getElementById('samples-value').innerText = exp;
+        DrawScene();
+    }
+
     function changeMax(param){
         var exp = param.value;
         var elem1=document.getElementById("static-friction-value");
@@ -1207,11 +1220,14 @@
         document.getElementById("motion-blur-slider").hidden = !(document.getElementById("motion-blur-slider").hidden);
         if(document.getElementById("motion-blur-slider").hidden){
             document.getElementById('blur-value').innerText = 0;
+            document.getElementById('samples-value').innerText = 1;
             DrawScene();
         }
         else{
             document.getElementById('blur-value').innerText = 10;
             document.getElementById('blur-exp').value = 10;
+            document.getElementById('samples-value').innerText = 10;
+            document.getElementById('samples-exp').value = 10;
             DrawScene();
         }
     }
@@ -1288,10 +1304,14 @@
     <div class="control"><hr/></div>
     <div class="control"><input id="envmap" name="envmap" type="checkbox" onchange="UseEnvironmentMap(this)" checked /><label for="envmap"> Environment Map</label></div>
     <div class="control" hidden id="reflection-slider"><span id="bounces-label">Bounce Limit:</span><span class="val"><span class="value" id="bounces-value">5</span><input type="button" value="+" onclick="IncBounceLimit(1)"><input type="button" value="&ndash;" onclick="IncBounceLimit(-1)"></span><input id="bounces-range" type="range" min="0" max="16" value="5" oninput="SetBounceLimit(this.value)"/></div>
-    <div class="control" hidden id="motion-blur-slider"><span id="blur-label">Motion Blur effect:</span><span id="blur-value">0</span><input id="blur-exp" type="range" min="0" max="100" value="0" oninput="changeBlur(this)" /></div>
+    <div class="control" hidden id="motion-blur-slider">
+        <span id="blur-label">Motion Blur effect:</span><span id="blur-value">0</span><input id="blur-exp" type="range" min="0" max="100" value="0" oninput="changeBlur(this)" />
+        <span id="samples-label">Number of Samples:</span><span id="samples-value">1</span><input id="samples-exp" type="range" min="1" max="20" value="1" oninput="changeSamples(this)"/>
+    </div>
     <div class="control" hidden id="shadow-slider"><span id="shadow-label">Shadow Intensity:</span><span id="shadow-value">30</span><input id="shadow-exp" type="range" min="0" max="50" value="30" oninput="changeShadowIntesity(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
+    <div class="control"></div>
     <div class="control"><span id="restitution-label">Restitution:</span><span id="restitution-value">80</span><input id="restitution-exp" type="range" min="0" max="100" value="80" oninput="update(this)"/></div>
     <div class="control"><span id="gravity-label">Gravity:</span><span id="gravity-value">1</span><input id="gravity-exp" type="range" min="1" max="30" value="1" oninput="updateGravity(this)"/></div>
     <div class="control"><span id="mass-label">Mass:</span><span id="mass-value">2</span><input id="mass-exp" type="range" min="1" max="10" value="2" oninput="updateMass(this)"/></div>

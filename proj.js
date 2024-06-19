@@ -34,6 +34,8 @@ uniform samplerCube envMap;
 uniform int bounceLimit;
 uniform float blurScale;
 uniform vec3     angularVelocity; // Uniform for angular velocity as a vector
+uniform sampler2D tex;
+uniform int numSamples;
 
 bool IntersectRay( inout HitInfo hit, Ray ray );
 
@@ -117,12 +119,11 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
     }
 
     Material groundMaterial;
-    groundMaterial.k_d=vec3(0/255, 255/255, 0/255);
-    groundMaterial.k_s=vec3(0.01,0.01,0.01);
+    groundMaterial.k_s=vec3(0.0,0.0,0.0);
     groundMaterial.n=1.0;
 
     // Check intersection with the ground rectangle
-    float t_ground = (-ray.pos.z -0.2) / ray.dir.z; // Intersection with y=0 plane
+    float t_ground = (-ray.pos.z - 0.2) / ray.dir.z; // Intersection with y=0 plane
     if (t_ground > 0.0 && t_ground < hit.t) {
         vec3 intersectionPoint = ray.pos + ray.dir * t_ground;
         // Define boundaries of the ground rectangle
@@ -133,7 +134,9 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
         if (intersectionPoint.x >= xmin && intersectionPoint.x <= xmax && intersectionPoint.y >= ymin && intersectionPoint.y <= ymax) {
             hit.t = t_ground;
             hit.position = intersectionPoint;
-            hit.normal = vec3(0.0, 1.0, 0.0); // Ground plane normal
+            hit.normal = vec3(0.0, 0.0, 1.0); // Ground plane normal
+            vec2 texCoord = vec2(intersectionPoint.x,intersectionPoint.y);
+            groundMaterial.k_d=texture2D(tex, texCoord).rgb;
             hit.mtl = groundMaterial; // Assume ground has a predefined material
             foundHit = true;
         }
@@ -146,9 +149,10 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
 // If the ray does not hit a sphere, returns the environment color.
 vec4 RayTracer(Ray ray) {
     vec3 finalColor = vec3(0.0);
-    const int numSamples = 5; // Adjust for more or fewer samples
+    const int maxNumSamples = 20; // Adjust for more or fewer samples
 
-    for (int i = 0; i < numSamples; i++) {
+    for (int i = 0; i < maxNumSamples; i++) {
+        if(i>=numSamples) break;
         float t = pow(float(i) / float(numSamples - 1), 2.0); // Exponential distribution
         mat3 blurMatrix = buildMotionBlurMatrix(angularVelocity, t * blurScale);
         vec3 sampleDir = blurMatrix * ray.dir;
