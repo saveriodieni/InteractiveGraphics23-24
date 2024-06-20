@@ -329,7 +329,10 @@
             var blurScale=parseInt(document.getElementById('blur-value').innerText)/10;
             gl.uniform1f(blurScaleLocation, blurScale);
             gl.uniform1i(gl.getUniformLocation(this.prog, 'tex'), 2);
-            if(activeShadows) gl.uniform1i(gl.getUniformLocation(this.prog, 'shadowsEnabled'), 1);
+            if(activeShadows){
+                gl.uniform1i(gl.getUniformLocation(this.prog, 'shadowsEnabled'), 1);
+                gl.uniform1f( gl.getUniformLocation( this.prog, 'shadowIntensity' ), parseInt(document.getElementById('shadow-value').innerText)/100 );
+            }
             else gl.uniform1i(gl.getUniformLocation(this.prog, 'shadowsEnabled'), 0);
             triSphere.draw( this.vp );
         }
@@ -1312,7 +1315,7 @@
         <span id="blur-label">Motion Blur effect:</span><span id="blur-value">0</span><input id="blur-exp" type="range" min="0" max="100" value="0" oninput="changeBlur(this)" />
         <span id="samples-label">Number of Samples:</span><span id="samples-value">1</span><input id="samples-exp" type="range" min="1" max="20" value="1" oninput="changeSamples(this)"/>
     </div>
-    <div class="control" hidden id="shadow-slider"><span id="shadow-label">Shadow Intensity:</span><span id="shadow-value">10</span><input id="shadow-exp" type="range" min="0" max="20" value="10" oninput="changeShadowIntesity(this)"/></div>
+    <div class="control" hidden id="shadow-slider"><span id="shadow-label">Shadow Intensity:</span><span id="shadow-value">10</span><input id="shadow-exp" type="range" min="0" max="30" value="10" oninput="changeShadowIntesity(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
     <div class="control"></div>

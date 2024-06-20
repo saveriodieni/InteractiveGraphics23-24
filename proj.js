@@ -37,6 +37,7 @@ uniform vec3     angularVelocity; // Uniform for angular velocity as a vector
 uniform sampler2D tex;
 uniform int numSamples;
 uniform int shadowsEnabled;
+uniform float shadowIntensity;
 
 bool IntersectRay( inout HitInfo hit, Ray ray );
 
@@ -197,6 +198,10 @@ vec4 RayTracer(Ray ray) {
             finalColor += textureCube(envMap, sampleRay.dir.xzy).rgb / float(numSamples); // Accumulate and average environment color
         }
     }
-
+    if(length(finalColor) == 0.0 && shadowsEnabled == 1){
+        vec2 texCoord = vec2(ray.dir.z,ray.dir.y);
+        vec3 color = texture2D(tex, texCoord).rgb * shadowIntensity;
+        return vec4(color, 1);
+    }
     return vec4(finalColor, 1.0);
 }`;
