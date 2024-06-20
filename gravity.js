@@ -55,12 +55,6 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
         }
     }
 
-    function nearToHole(index){
-        for(var i=0;i<holes.length;i++){
-            if((positions[index].sub(holes[i])).len()<0.8) return true;
-        }
-        return false;
-    }
     var forces = Array(positions.length); // The total force per particle
     if (iteration === undefined){
         iteration = 0;
@@ -195,8 +189,9 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
     for (var i = 0; i < positions.length; i++) {
         var x = positions[i].x;
         var y = positions[i].y;
-        var r = radii[i]+0.22;
-        if((x+3)*(x+3)+(y+5.5)*(y+5.5)<=r*r || (x-3)*(x-3)+(y-5.5)*(y-5.5)<=r*r || (x-3)*(x-3)+(y+5.5)*(y+5.5)<=r*r || (x+3)*(x+3)+(y-5.5)*(y-5.5)<=r*r){ // {up-left,up-right,bottom-left,bottom-right} hole        
+        var r1 = 1.5 * radii[i];
+        var r2 = 2 * radii[i];
+        if((x+3)*(x+3)+(y+5.5)*(y+5.5)<=r2*r2 || (x-3)*(x-3)+(y-5.5)*(y-5.5)<=r2*r2 || (x-3)*(x-3)+(y+5.5)*(y+5.5)<=r2*r2 || (x+3)*(x+3)+(y-5.5)*(y-5.5)<=r2*r2){ // {up-left,up-right,bottom-left,bottom-right} hole                
             positions[i].x=3.0*Math.sign(positions[i].x);
             if(positions[i].z>=0.0) positions[i].z=-0.1;
             positions[i].y=5.55*Math.sign(positions[i].y);
@@ -204,44 +199,16 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
             else velocities[i]=new Vec3(0,0,0);
             if(i==15) whiteBallInHole=true;
         }
-
-        else if((Math.abs(positions[i].y)+radii[i])<0.3 && (Math.abs(positions[i].x)+radii[i])>2.85){ // {left,right} hole
-            if(nearToHole(i)){
-                positions[i].x=3.0*Math.sign(positions[i].x);
-                if(positions[i].z>=0.0) positions[i].z=-0.1;
-                positions[i].y=0.0;
-                if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
-                else {
-                    positions[i].z=-1.0;
-                    velocities[i]=new Vec3(0,0,0);
-                }
-                if(i==15) whiteBallInHole=true;
+        else if((x+3)*(x+3)+y*y<=r1*r1+velocities[i].len()*dt || (x-3)*(x-3)+y*y<=r1*r1+velocities[i].len()*dt){ // {left,right} hole
+            positions[i].x=3.0*Math.sign(positions[i].x);
+            if(positions[i].z>=0.0) positions[i].z=-0.1;
+            positions[i].y=0.0;
+            if(positions[i].z>-1.0){velocities[i]=new Vec3(0,0,gravity.z*particleMass);}
+            else {
+                positions[i].z=-1.0;
+                velocities[i]=new Vec3(0,0,0);
             }
-            else{
-                if((Math.abs(positions[i].x)+radii[i])>=2.7){//{left,right} wall
-                    var lengthPos=velocities[i].len();
-                    var holeCoordinates=new Vec3(3.0*Math.sign(positions[i].x),5.55*Math.sign(positions[i].y),0);
-                    var lengthHole=holeCoordinates.len();
-                    cosTheta=(positions[i].dot(holeCoordinates))/(lengthHole*lengthPos);
-                    if(Math.abs(cosTheta)<=1.0){
-                        sinTheta=Math.sqrt(1-cosTheta*cosTheta);
-                        velocities[i].x = lengthPos*cosTheta*restitution*Math.sign(velocities[i].x);
-                        velocities[i].y = lengthPos*sinTheta*restitution*Math.sign(velocities[i].y);
-                    }
-                }
-                
-                else if((Math.abs(positions[i].y)+radii[i])>=5.25){//{bottom,up} wall
-                    var lengthPos=velocities[i].len();
-                    var holeCoordinates=new Vec3(3.0*Math.sign(positions[i].x),5.55*Math.sign(positions[i].y),0);
-                    var lengthHole=holeCoordinates.len();
-                    cosTheta=(positions[i].dot(holeCoordinates))/(lengthHole*lengthPos);
-                    if(Math.abs(cosTheta)<=1.0){
-                        sinTheta=Math.sqrt(1-cosTheta*cosTheta);
-                        velocities[i].x = lengthPos*cosTheta*restitution*Math.sign(velocities[i].x);
-                        velocities[i].y = lengthPos*sinTheta*restitution*Math.sign(velocities[i].y);
-                    }
-                }
-            }
+            if(i==15) whiteBallInHole=true;
         }
 
         else if((Math.abs(positions[i].x)+radii[i])>=2.85){//{left,right} wall
