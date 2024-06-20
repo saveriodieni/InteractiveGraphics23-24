@@ -26,8 +26,7 @@ var objFS1 = `
 
 	uniform sampler2D tex;
 	varying vec2 texCoord;
-
-	uniform vec3 Kd; 
+	
 	uniform vec3 Ks; 
 	uniform float shininessVal; 
 	uniform vec3 Id; 
@@ -72,7 +71,6 @@ var objShadows = `
 	uniform sampler2D tex;
 	varying vec2 texCoord;
 
-	uniform vec3 Kd;
 	uniform vec3 Ks;
 	uniform float shininessVal;
 	uniform vec3 Id;
@@ -130,41 +128,6 @@ var objShadows = `
 	}
 `;
 
-
-// This function takes the translation and two rotation angles (in radians) as input arguments.
-// The two rotations are applied around x and y axes.
-// It returns the combined 4x4 transformation matrix as an array in column-major order.
-// You can use the MatrixMult function defined in project5.html to multiply two 4x4 matrices in the same format.
-function GetModelViewMatrix( translationX, translationY, translationZ, rotationX, rotationY )
-{
-	// [TO-DO] Modify the code below to form the transformation matrix.
-	var trans = [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		translationX, translationY, translationZ, 1
-	];
-	
-	var rotatX=[
-		1, 0, 0, 0,
-		0, Math.cos(rotationX), Math.sin(rotationX), 0,
-		0, -Math.sin(rotationX), Math.cos(rotationX), 0,
-		0, 0, 0, 1
-	];
-	var rotatY=[
-		Math.cos(rotationY), 0, -Math.sin(rotationY), 0,
-		0, 1 , 0, 0,
-		Math.sin(rotationY), 0, Math.cos(rotationY), 0,
-		0, 0, 0, 1
-	];
-
-	var mv=MatrixMult(rotatX,rotatY);
-	mv=MatrixMult(trans,mv);
-	
-	return mv;
-}
-
-
 // [TO-DO] Complete the implementation of the following class.
 
 class MeshDrawer
@@ -174,7 +137,7 @@ class MeshDrawer
 	{
 		// [TO-DO] initializations
 
-		this.lightPos = [0,10,0];//,5.0, 5.0, 10,-5.0, -5.0, 10,-5.0, 5.0, 10,5.0, -5.0, 10];
+		this.lightPos = [0,10,0];
 
 		// Compile the shader program
 		this.prog0 = InitShaderProgram( objVS1, objShadows );
@@ -192,7 +155,6 @@ class MeshDrawer
 		this.texCoords;
 		this.normals;
 
-		this.Kd = [165/255, 42/255, 42/255];
 		this.Ks = [0.01, 0.01, 0.01];
 		this.Id = [1.0,1.0,1.0];
 	}
@@ -280,7 +242,6 @@ class MeshDrawer
 		normalAttribute=gl.getAttribLocation(program,"norm");
 		var aux = MatrixMult(matrixMV,[this.lightPos[0],this.lightPos[1],this.lightPos[2],1.0]).slice(0,3);
 		gl.uniform3fv(gl.getUniformLocation(program, 'lightPos'), aux); 
-		gl.uniform3fv(gl.getUniformLocation(program, 'Kd'), this.Kd); 
 		gl.uniform3fv(gl.getUniformLocation(program, 'Ks'), this.Ks); 
 		gl.uniform1f(gl.getUniformLocation(program, 'shininessVal'), this.shininess); 
 		gl.uniform3fv(gl.getUniformLocation(program, 'Id'), this.Id);
@@ -343,30 +304,5 @@ class MeshDrawer
 
 		this.textureUnit = unit;
 	}
-	
-	// This method is called to set the incoming light direction
-	setLightDir( x, y, z )
-	{
-		// [TO-DO] set the uniform parameter(s) of the fragment shader to specify the light direction.
-		this.lightPos = [x,y,z];
-	}
-	
-	// This method is called to set the shininess of the material
-	setShininess( shininess )
-	{
-		// [TO-DO] set the uniform parameter(s) of the fragment shader to specify the shininess.
-		this.shininess=shininess;
-	}
-
-	setSpecularityR(specularity){
-		this.Ks[0]=specularity;
-	}
-	setSpecularityG(specularity){
-		this.Ks[1]=specularity;
-	}
-	setSpecularityB(specularity){
-		this.Ks[2]=specularity;
-	}
-
 }
 var meshDrawerLower,meshDrawerUpper;

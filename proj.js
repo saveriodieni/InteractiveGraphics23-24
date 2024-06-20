@@ -36,6 +36,7 @@ uniform float blurScale;
 uniform vec3     angularVelocity; // Uniform for angular velocity as a vector
 uniform sampler2D tex;
 uniform int numSamples;
+uniform int shadowsEnabled;
 
 bool IntersectRay( inout HitInfo hit, Ray ray );
 
@@ -123,18 +124,19 @@ bool IntersectRay( inout HitInfo hit, Ray ray )
     groundMaterial.n=1.0;
 
     // Check intersection with the ground rectangle
-    float t_ground = (-ray.pos.z - 0.2) / ray.dir.z; // Intersection with y=0 plane
+    float t_ground = (-ray.pos.z - 0.2) / ray.dir.z; // Intersection with z=-0.2 plane
     if (t_ground > 0.0 && t_ground < hit.t) {
         vec3 intersectionPoint = ray.pos + ray.dir * t_ground;
         // Define boundaries of the ground rectangle
-        float xmin = -3.5;
-        float xmax = 3.5;
+        float xmin = -3.3;
+        float xmax = 3.3;
         float ymin = -6.0;
         float ymax = 6.0;
         if (intersectionPoint.x >= xmin && intersectionPoint.x <= xmax && intersectionPoint.y >= ymin && intersectionPoint.y <= ymax) {
             hit.t = t_ground;
-            hit.position = intersectionPoint;
             hit.normal = vec3(0.0, 0.0, 1.0); // Ground plane normal
+            if(shadowsEnabled == 0) hit.position = intersectionPoint + hit.normal;
+            else hit.position = intersectionPoint;
             vec2 texCoord = vec2(intersectionPoint.x,intersectionPoint.y);
             groundMaterial.k_d=texture2D(tex, texCoord).rgb;
             hit.mtl = groundMaterial; // Assume ground has a predefined material

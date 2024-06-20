@@ -141,7 +141,7 @@ function SimTimeStep(dt, positions, radii, velocities, muS, muD, particleMass, g
 			let frictionForce = gravity.len() * muD * particleMass;
 			let frictionTorque = velocities[i].mul(frictionForce * radii[i]);
 			let angularAcceleration = frictionTorque.div(momentOfInertia);
-			omega[i] = omega[i].add(angularAcceleration.mul(dt));
+			omega[i] = omega[i].sub(angularAcceleration.mul(dt));
 		}
     }
 

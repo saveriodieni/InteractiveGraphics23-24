@@ -329,6 +329,8 @@
             var blurScale=parseInt(document.getElementById('blur-value').innerText)/10;
             gl.uniform1f(blurScaleLocation, blurScale);
             gl.uniform1i(gl.getUniformLocation(this.prog, 'tex'), 2);
+            if(activeShadows) gl.uniform1i(gl.getUniformLocation(this.prog, 'shadowsEnabled'), 1);
+            else gl.uniform1i(gl.getUniformLocation(this.prog, 'shadowsEnabled'), 0);
             triSphere.draw( this.vp );
         }
     };
@@ -443,22 +445,22 @@
     };
 
     function updateCenters(drawer) {
-            var centersArray = new Float32Array(list_of_centers.length * 3);
-            for (var i = 0; i < list_of_centers.length; i++) {
-                spheres[i].center = [list_of_centers[i].x, list_of_centers[i].y, list_of_centers[i].z];
-                gl.uniform3fv( gl.getUniformLocation( drawer.prog, 'spheres['+i+'].center' ), spheres[i].center );
-                centersArray[i * 3] = list_of_centers[i].x;
-                centersArray[i * 3 + 1] = list_of_centers[i].y;
-                centersArray[i * 3 + 2] = list_of_centers[i].z;
-            }
-            gl.bindBuffer(gl.ARRAY_BUFFER, drawer.pbuf);
-            gl.bufferSubData(gl.ARRAY_BUFFER, 0, centersArray);
-
-            // Re-bind the buffer and attribute pointer to ensure they are set for the next draw
-            drawer.center  = gl.getUniformLocation( drawer.prog, 'center' );
-            gl.enableVertexAttribArray(drawer.center);
-            gl.vertexAttribPointer(drawer.center, 3, gl.FLOAT, false, 0, 0);
+        var centersArray = new Float32Array(list_of_centers.length * 3);
+        for (var i = 0; i < list_of_centers.length; i++) {
+            spheres[i].center = [list_of_centers[i].x, list_of_centers[i].y, list_of_centers[i].z];
+            gl.uniform3fv( gl.getUniformLocation( drawer.prog, 'spheres['+i+'].center' ), spheres[i].center );
+            centersArray[i * 3] = list_of_centers[i].x;
+            centersArray[i * 3 + 1] = list_of_centers[i].y;
+            centersArray[i * 3 + 2] = list_of_centers[i].z;
         }
+        gl.bindBuffer(gl.ARRAY_BUFFER, drawer.pbuf);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, centersArray);
+
+        // Re-bind the buffer and attribute pointer to ensure they are set for the next draw
+        drawer.center  = gl.getUniformLocation( drawer.prog, 'center' );
+        gl.enableVertexAttribArray(drawer.center);
+        gl.vertexAttribPointer(drawer.center, 3, gl.FLOAT, false, 0, 0);
+    }
     
     class SecondaryRayTracer extends RayTracer
     {
@@ -582,6 +584,9 @@
         gl.texParameteri( gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR );
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Table builder
+
     function LoadObjUpper()
     {
         var meshData=upperMesh;
@@ -614,7 +619,6 @@
         img.src = "pool-table/linen-texture-green-tones.jpg";
         img.onload = function() {
             meshDrawerUpper.setTexture( img , 2 );
-            //DrawScene();
         }
     }
 
@@ -652,6 +656,8 @@
             meshDrawerLower.setTexture( img , 0 );
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     // Called once to initialize
     function InitWebGL()
@@ -680,7 +686,6 @@
         sphereDrawer.setLight( lights[0].position, lights[0].intensity );
         UpdateCanvasSize();
 
-        let fileContent;
 	    meshDrawerUpper = new MeshDrawer();
         meshDrawerLower = new MeshDrawer();
 
@@ -792,7 +797,7 @@
             matrixMVP=MatrixMult( perspectiveMatrix, trans.worldToCam );
             var mv=trans.worldToCam;
             var nrmTrans = [ mv[0],mv[1],mv[2], mv[4],mv[5],mv[6], mv[8],mv[9],mv[10] ];
-            var campos = [mv[12],mv[13],mv[14]]
+            var campos = [mv[12],mv[13],mv[14]];
             meshDrawerUpper.draw(activeShadows,matrixMVP, mv, nrmTrans, campos);
             meshDrawerLower.draw(false,matrixMVP, mv, nrmTrans, campos);
             secondaryRT.draw( mvp, trans );
@@ -900,30 +905,9 @@
         UpdateCanvasSize();
         DrawScene();
     }
-    
-    function UseEnvironmentMap( param )
-    {
-        gl.bindTexture( gl.TEXTURE_CUBE_MAP, param.checked ? environmentTexture : null );
-        DrawScene();
-    }
-    
-    function IncBounceLimit( inc )
-    {
-        var b = parseInt(document.getElementById('bounces-value').innerText);
-        b += inc;
-        if ( b < 0 ) b = 0;
-        if ( b > maxBounceLimit ) b = maxBounceLimit;
-        SetBounceLimit( b );
-        document.getElementById('bounces-range').value = b;
-    }
-    
-    function SetBounceLimit( b )
-    {
-        document.getElementById('bounces-value').innerText = b;
-        secondaryRT.setBounceLimit( b );
-        UpdateProjectionMatrix();
-        DrawScene();
-    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Simulation Controls
 
     function StartSimulation(){
         if(animationId) return;
@@ -947,7 +931,7 @@
         function render() {
             gravity=new Vec3( 0, 0.0, -1*parseInt(document.getElementById("gravity-value").innerText));
             mass=parseInt(document.getElementById("mass-value").innerText);
-            var momentOfInertia = 2 / 5 * mass * radii[0] * radii[0]; // Moment of inertia for a solid spher
+            var momentOfInertia = 2 / 5 * mass * radii[0] * radii[0]; // Moment of inertia for a solid sphere
             muS=parseInt(document.getElementById("static-friction-value").innerText)/100;
             muD=parseInt(document.getElementById("dynamic-friction-value").innerText)/100;
             restitution=parseInt(document.getElementById("restitution-value").innerText)/100;
@@ -1173,10 +1157,30 @@
         document.getElementById("reset").hidden=false;
     }
     
-    function NewScene()
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Controls
+
+    function UseEnvironmentMap( param )
     {
-        InitScene();
-        secondaryRT.init();
+        gl.bindTexture( gl.TEXTURE_CUBE_MAP, param.checked ? environmentTexture : null );
+        DrawScene();
+    }
+    
+    function IncBounceLimit( inc )
+    {
+        var b = parseInt(document.getElementById('bounces-value').innerText);
+        b += inc;
+        if ( b < 0 ) b = 0;
+        if ( b > maxBounceLimit ) b = maxBounceLimit;
+        SetBounceLimit( b );
+        document.getElementById('bounces-range').value = b;
+    }
+    
+    function SetBounceLimit( b )
+    {
+        document.getElementById('bounces-value').innerText = b;
+        secondaryRT.setBounceLimit( b );
+        UpdateProjectionMatrix();
         DrawScene();
     }
     
@@ -1240,8 +1244,8 @@
             DrawScene();
         }
         else{
-            document.getElementById('shadow-value').innerText = 30;
-            document.getElementById('shadow-exp').value = 30;
+            document.getElementById('shadow-value').innerText = 10;
+            document.getElementById('shadow-exp').value = 10;
             DrawScene();
         }
     }
@@ -1308,7 +1312,7 @@
         <span id="blur-label">Motion Blur effect:</span><span id="blur-value">0</span><input id="blur-exp" type="range" min="0" max="100" value="0" oninput="changeBlur(this)" />
         <span id="samples-label">Number of Samples:</span><span id="samples-value">1</span><input id="samples-exp" type="range" min="1" max="20" value="1" oninput="changeSamples(this)"/>
     </div>
-    <div class="control" hidden id="shadow-slider"><span id="shadow-label">Shadow Intensity:</span><span id="shadow-value">30</span><input id="shadow-exp" type="range" min="0" max="50" value="30" oninput="changeShadowIntesity(this)"/></div>
+    <div class="control" hidden id="shadow-slider"><span id="shadow-label">Shadow Intensity:</span><span id="shadow-value">10</span><input id="shadow-exp" type="range" min="0" max="20" value="10" oninput="changeShadowIntesity(this)"/></div>
     <div class="control"><span id="static-friction-label">Static Friction:</span><span id="static-friction-value">30</span><input id="static-friction-exp" type="range" min="0" max="100" value="30" oninput="changeMax(this)"/></div>
     <div class="control"><span id="dynamic-friction-label">Dynamic Friction:</span><span id="dynamic-friction-value">20</span><input id="dynamic-friction-exp" type="range" min="0" max="30" value="20" oninput="change(this)"/></div>
     <div class="control"></div>
